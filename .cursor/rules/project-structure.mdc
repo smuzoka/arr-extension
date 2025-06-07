@@ -1,0 +1,39 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Chrome Extension Project Structure
+
+This is a Chrome extension built with WXT.dev, React, and TypeScript for searching and adding content to *arr applications (Sonarr, Radarr).
+
+## Core Architecture
+
+- **Build System**: WXT.dev with React module configured in [wxt.config.ts](mdc:wxt.config.ts)
+- **Package Management**: [package.json](mdc:package.json) with TypeScript, React, and WXT dependencies
+- **TypeScript Config**: [tsconfig.json](mdc:tsconfig.json) for main code, [tsconfig.node.json](mdc:tsconfig.node.json) for build files
+
+## Entry Points
+
+- **Background Script**: [entrypoints/background.ts](mdc:entrypoints/background.ts) - Handles context menu creation and messaging
+- **Popup Interface**: [entrypoints/popup/](mdc:entrypoints/popup/) - Main user interface with integrated settings
+
+## Source Code Organization
+
+- **API Layer**: [src/api/](mdc:src/api/) - Contains API service and TypeScript types
+- **Utilities**: [src/utils/](mdc:src/utils/) - Chrome storage helpers and shared utilities
+
+## Key Files
+
+- [src/api/arrApi.ts](mdc:src/api/arrApi.ts) - Main API service for Sonarr/Radarr integration
+- [src/api/types.ts](mdc:src/api/types.ts) - TypeScript interfaces for all data structures
+- [src/utils/storage.ts](mdc:src/utils/storage.ts) - Chrome extension storage management
+- [entrypoints/popup/App.tsx](mdc:entrypoints/popup/App.tsx) - Main popup React component with integrated settings
+- [entrypoints/popup/Settings.tsx](mdc:entrypoints/popup/Settings.tsx) - Settings component integrated within popup
+- [entrypoints/popup/App.css](mdc:entrypoints/popup/App.css) - Styles for popup and integrated settings
+
+## Important Notes
+
+- **No Separate Options Page**: Settings are integrated directly into the popup window
+- **Single Window Experience**: All functionality (search, add, settings) happens within the popup
+- **Settings Gear Icon**: ⚙️ icon in popup header toggles between main view and settings view

@@ -1,0 +1,70 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# UI Components Guide
+
+The extension uses React with TypeScript for a unified popup interface with integrated settings.
+
+## Main Popup Component
+
+[entrypoints/popup/App.tsx](mdc:entrypoints/popup/App.tsx) is the main popup component with four key states:
+
+### 1. Header with Settings Access
+- **App Header**: Shows "*arr Search Tool" title and settings gear icon (⚙️)
+- **Settings Toggle**: Clicking gear switches between main view and settings view
+- **Unified Navigation**: All functionality within single popup window
+
+### 2. No Apps Configured State
+Shows a message directing users to click the settings gear to configure applications.
+
+### 3. Search & Results View (Main State)
+- **App Switcher**: Icon bar for switching between configured *arr apps
+- **Search Bar**: Auto-filled from context menu, supports Enter key search
+- **Results Cards**: Display search results with images, titles, years, and descriptions
+- **Added Indicators**: Green checkmarks for content already in the library
+
+### 4. Add Item Form
+- **Dynamic Fields**: Different options for Sonarr vs Radarr
+- **Quality Profiles**: Dropdown populated from API
+- **Root Folders**: Dropdown populated from API  
+- **Monitoring Options**: Checkboxes for monitoring and search preferences
+
+## Integrated Settings Component
+
+[entrypoints/popup/Settings.tsx](mdc:entrypoints/popup/Settings.tsx) manages *arr application configuration within the popup:
+
+- **Compact Design**: Optimized for popup window constraints
+- **Settings Header**: Title with close button (✕) to return to main view
+- **App List**: Compact cards showing configured applications
+- **Inline Actions**: Icon buttons (🔌 test, ✏️ edit, 🗑️ delete) for each app
+- **Add/Edit Form**: Streamlined form for adding new apps or editing existing ones
+- **Connection Testing**: Validates API connectivity before saving
+- **Form Validation**: Ensures all required fields are filled
+
+## Styling Architecture
+
+[entrypoints/popup/App.css](mdc:entrypoints/popup/App.css) contains styles for both main interface and settings:
+
+- **Main Interface**: App switcher, search, results cards, add forms
+- **Settings Interface**: Compact app cards, inline actions, streamlined forms
+- **Responsive Design**: Optimized for popup window dimensions
+- **Icon Buttons**: Small action buttons for compact interface
+
+## State Management
+
+Components use React hooks for state management:
+- `useState` for component state and view switching
+- `useEffect` for loading initial data
+- Custom async functions for API interactions
+- Settings state communicates with main app via callbacks
+
+## User Experience Features
+
+- **Seamless Transitions**: Smooth switching between main view and settings
+- **Immediate Updates**: Settings changes instantly reflect in main interface
+- **Loading States**: "Searching...", "Adding...", "Testing..." indicators
+- **Success/Error Handling**: Colored notifications with helpful messages
+- **Compact Interface**: All functionality within popup constraints
+- **Icon-Based Actions**: Space-efficient button design for settings
