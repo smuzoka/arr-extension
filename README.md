@@ -9,7 +9,7 @@ A modern Chrome extension that enables users to highlight text (e.g., a movie or
 - **🖼️ Rich Search Results**: View results with poster images, titles, years, and descriptions
 - **⚡ One-Click Adding**: Add content to your *arr applications with customizable settings
 - **✅ Already Added Detection**: Shows which content is already in your library
-- **⚙️ Integrated Settings**: Settings management within the popup - no separate pages or tabs
+- **⚙️ Integrated Settings**: Settings management within the popup
 - **📱 Modern UX**: Mobile-like interface with seamless navigation
 
 ## Installation
