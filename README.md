@@ -25,7 +25,7 @@ A Chrome extension that enables users to highlight text (e.g., a movie or series
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/arr-extension.git
+   git clone https://github.com/smuzoka/arr-extension.git
    cd arr-extension
    ```
 
