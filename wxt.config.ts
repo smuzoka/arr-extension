@@ -3,16 +3,26 @@ import { defineConfig } from 'wxt';
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   manifest: {
-    name: '*arr Search & Add Tool',
-    description: 'Search and add content to your *arr applications (Sonarr, Radarr, etc.)',
+    name: 'ArrExtension',
+    description: 'Search and add media to your *arr applications.',
+    version: '202507.07.1',
     permissions: [
-      'contextMenus',
       'storage',
+      'contextMenus',
       'activeTab'
     ],
     host_permissions: [
-      'https://*/*',
-      'http://*/*'
-    ]
+      '*://*/*'
+    ],
+    action: {
+      default_popup: 'popup.html',
+      default_title: 'ArrExtension'
+    },
+    icons: {
+      16: 'arr16x16.png',
+      32: 'arr32x32.png',
+      48: 'arr48x48.png',
+      128: 'arr128x128.png'
+    }
   }
 }); 

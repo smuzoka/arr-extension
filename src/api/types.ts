@@ -1,28 +1,47 @@
 export interface ArrApp {
   id: string;
   name: string;
-  type: 'sonarr' | 'radarr';
+  type: 'sonarr' | 'radarr' | 'lidarr' | 'readarr';
   url: string;
   apiKey: string;
+  icon: string;
 }
 
 export interface SearchResult {
-  id: string;
+  id: number;
   title: string;
   year?: number;
   overview?: string;
-  images: SearchResultImage[];
+  images: Array<{
+    coverType: string;
+    url: string;
+  }>;
+  ratings?: {
+    votes?: number;
+    value: number;
+    imdb?: {
+      value: number;
+    };
+    tmdb?: {
+      value: number;
+    };
+  };
+  genres?: string[];
+  status?: string;
+  network?: string;
+  language?: string;
+  originalLanguage?: {
+    id: number;
+    name: string;
+  };
+  // Sonarr specific
   tvdbId?: number;
+  seriesType?: string;
+  // Radarr specific
   tmdbId?: number;
   imdbId?: string;
-  status?: string;
-  isAdded?: boolean;
-}
-
-export interface SearchResultImage {
-  coverType: string;
-  url: string;
-  remoteUrl?: string;
+  // Common
+  remotePoster?: string;
 }
 
 export interface QualityProfile {
@@ -33,31 +52,33 @@ export interface QualityProfile {
 export interface RootFolder {
   id: number;
   path: string;
-  freeSpace: number;
 }
 
-export interface AddItemRequest {
+export interface AddSeriesRequest {
   title: string;
   qualityProfileId: number;
   rootFolderPath: string;
-  tvdbId?: number;
-  tmdbId?: number;
-  imdbId?: string;
+  tvdbId: number;
   monitored: boolean;
-  searchForMovie?: boolean;
-  searchForMissingEpisodes?: boolean;
+  seasonFolder: boolean;
+  seriesType?: string;
   tags?: number[];
+  searchForMissingEpisodes?: boolean;
+  searchForCutoffUnmetEpisodes?: boolean;
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
+export interface AddMovieRequest {
+  title: string;
+  qualityProfileId: number;
+  rootFolderPath: string;
+  tmdbId: number;
+  monitored: boolean;
+  tags?: number[];
+  searchForMovie?: boolean;
 }
 
 export interface SystemStatus {
   version: string;
-  buildTime: string;
-  isDebug: boolean;
+  branch: string;
   authentication: string;
 } 

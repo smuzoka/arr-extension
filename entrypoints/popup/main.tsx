@@ -1,10 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './App.css';
-import App from './App';
+import Popup from '../../src/components/Popup';
+import '@fortawesome/fontawesome-free/css/all.min.css';
+import './style.css';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+const root = ReactDOM.createRoot(document.getElementById('app')!);
+root.render(
   <React.StrictMode>
-    <App />
+    <Popup />
   </React.StrictMode>
 ); 

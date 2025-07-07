@@ -1,219 +1,183 @@
-# *arr Search & Add Tool - Chrome Extension
+# ArrExtension
 
-A modern Chrome extension that enables users to highlight text (e.g., a movie or series title) in their browser, right-click, and search for it in their configured *arr applications (Sonarr, Radarr, etc.). Features a unified popup interface with integrated settings for a seamless user experience.
+A Chrome extension that enables users to highlight text (e.g., a movie or series title) in their browser, right-click, and search for it in their configured *arr applications (e.g., Sonarr, Radarr, Lidarr, etc.). Search results are shown in a visually rich card format, and users can add items directly to their *arr apps.
 
-## ✨ Features
+## Features
 
-- **🔍 Context Menu Search**: Highlight text on any webpage, right-click, and search in your *arr apps
-- **🎬 Multiple *arr App Support**: Configure and switch between Sonarr, Radarr, and other *arr applications
-- **🖼️ Rich Search Results**: View results with poster images, titles, years, and descriptions
-- **⚡ One-Click Adding**: Add content to your *arr applications with customizable settings
-- **✅ Already Added Detection**: Shows which content is already in your library
-- **⚙️ Integrated Settings**: Settings management within the popup
-- **📱 Modern UX**: Mobile-like interface with seamless navigation
+- **Context Menu Integration**: Highlight text on any webpage, right-click, and search in your *arr apps
+- **Multiple *arr App Support**: Configure and switch between Sonarr, Radarr, Lidarr, and Readarr
+- **Rich Search Results**: Beautiful card layout with posters, ratings, genres, and descriptions
+- **Smart Add Detection**: Shows which items are already in your collection with green checkmarks
+- **Dynamic Add Forms**: Context-aware forms that adapt to each *arr application type
+- **Connection Testing**: Built-in connectivity testing for all configured apps
+- **Modern UI**: Clean, responsive interface with dark/light theme support
+
+## Supported Applications
+
+- **Sonarr** (TV Shows) - v3 API
+- **Radarr** (Movies) - v3 API  
+- **Lidarr** (Music) - v1 API
+- **Readarr** (Books) - v1 API
 
 ## Installation
 
 ### Development Setup
 
-1. **Clone the repository**:
+1. Clone the repository:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/your-username/arr-extension.git
    cd arr-extension
    ```
 
-2. **Install dependencies**:
+2. Install dependencies:
    ```bash
    npm install
    ```
 
-3. **Start development server**:
+3. Start development mode:
    ```bash
    npm run dev
    ```
 
-4. **Load extension in Chrome**:
-   - Open Chrome and go to `chrome://extensions/`
-   - Enable "Developer mode" in the top right
+4. Load the extension in Chrome:
+   - Open Chrome and navigate to `chrome://extensions/`
+   - Enable "Developer mode"
    - Click "Load unpacked" and select the `.output/chrome-mv3` folder
 
 ### Production Build
 
-1. **Build the extension**:
-   ```bash
-   npm run build
-   ```
+```bash
+npm run build
+npm run zip
+```
 
-2. **Create distribution zip**:
-   ```bash
-   npm run zip
-   ```
+## Configuration
+
+1. **Install the extension** in your browser
+2. **Right-click the extension icon** and select "Options" (or click the gear icon in the popup)
+3. **Add your *arr applications**:
+   - Click "Add New App"
+   - Enter a name (e.g., "My Sonarr")
+   - Select the app type
+   - Enter the server URL (e.g., `http://localhost:8989`)
+   - Enter your API key (found in Settings → General → Security in your *arr app)
+   - Click "Test Connection" to verify
+   - Click "Add App" to save
 
 ## Usage
 
-### Setup
+### Basic Search
 
-1. **Install the extension** (see Installation section above)
+1. **Highlight text** on any webpage (movie title, TV show name, etc.)
+2. **Right-click** and select "Search in *arr apps"
+3. The extension popup will open with your search term pre-filled
+4. **Switch between apps** using the icon bar at the top
+5. **Browse results** in the card format
+6. **Click any result** to open the add form
 
-2. **Configure your *arr applications**:
-   - Click the extension icon to open the popup
-   - Click the **settings gear (⚙️)** in the top-right corner
-   - Click "Add Application"
-   - Fill in your app details:
-     - Name: A friendly name for your app
-     - Type: Sonarr (TV Shows) or Radarr (Movies)
-     - URL: Your app's URL (e.g., `http://localhost:8989`)
-     - API Key: Your app's API key (found in Settings > General in your *arr app)
-   - Click "Test" (🔌) to verify the connection, then "Add"
-   - Click **✕** to return to the main view
+### Adding Items
 
-### Searching and Adding Content
+1. **Click on a search result** to open the add form
+2. **Configure settings**:
+   - Select root folder
+   - Choose quality profile
+   - Set monitoring options
+   - Configure search preferences
+3. **Click "Add Item"** to add to your *arr application
+4. Successfully added items will show a green checkmark
 
-1. **Search from webpage**:
-   - Highlight any text on a webpage (movie or TV show title)
-   - Right-click and select "Search in *arr apps: [highlighted text]"
-   - The extension popup will open with search results
+### Managing Apps
 
-2. **Switch between apps**:
-   - Use the app icons at the top to switch between configured applications
-   - Each search will show results from the selected app
+- **Test connections** using the "Test" button in settings
+- **Edit existing apps** with the "Edit" button
+- **Remove apps** with the "Delete" button
+- **View connection status** and version information
 
-3. **Add content**:
-   - Click on any search result card to open the add form
-   - Configure settings (Quality Profile, Root Folder, etc.)
-   - Click "Add" to add the content to your *arr application
+## API Requirements
 
-## 📁 Project Structure
+Your *arr applications must be accessible from your browser with proper CORS headers configured. Most *arr applications support this by default when accessed from browser extensions.
+
+### Required API Endpoints
+
+The extension uses these API endpoints:
+
+- `GET /api/v3/system/status` - Connection testing
+- `GET /api/v3/series/lookup` (Sonarr) - Search for series
+- `GET /api/v3/movie/lookup` (Radarr) - Search for movies  
+- `GET /api/v3/series` (Sonarr) - List existing series
+- `GET /api/v3/movie` (Radarr) - List existing movies
+- `GET /api/v3/qualityProfile` - Get quality profiles
+- `GET /api/v3/rootfolder` - Get root folders
+- `POST /api/v3/series` (Sonarr) - Add series
+- `POST /api/v3/movie` (Radarr) - Add movies
+
+## Security
+
+- **API keys are stored securely** using Chrome's extension storage API
+- **Connections use HTTPS** when possible
+- **No data is transmitted** to external servers except your configured *arr applications
+- **Local storage only** - all configuration stays on your device
+
+## Development
+
+### Project Structure
 
 ```
 /
-├── entrypoints/
-│   ├── background.ts          # Background script for context menu
-│   └── popup/                 # Main popup interface with integrated settings
-│       ├── App.tsx           # Main popup component with settings toggle
-│       ├── Settings.tsx      # Integrated settings component
-│       ├── App.css           # Unified popup and settings styles
-│       ├── main.tsx          # Popup entry point
-│       └── index.html        # Popup HTML
+├── entrypoints/           # Extension entry points
+│   ├── popup.tsx         # Main popup interface
+│   ├── options.tsx       # Settings page
+│   └── background.ts     # Background script
 ├── src/
-│   ├── api/
-│   │   ├── arrApi.ts         # *arr API service
-│   │   └── types.ts          # TypeScript interfaces
-│   └── utils/
-│       └── storage.ts        # Chrome storage utilities
-├── .cursor/rules/            # Cursor AI navigation rules
-├── requirements/             # Project requirements and design docs
-├── package.json
-├── wxt.config.ts             # WXT configuration
-├── tsconfig.json             # TypeScript configuration
-├── .gitignore
-└── README.md
+│   ├── api/              # API interfaces and types
+│   ├── components/       # React components
+│   └── utils/            # Utility functions
+├── public/               # Static assets
+└── wxt.config.ts         # WXT configuration
 ```
 
-## Supported *arr Applications
-
-- **Sonarr**: TV show management
-- **Radarr**: Movie management
-
-## API Integration
-
-The extension uses the official *arr APIs:
-
-### Sonarr (TV Shows)
-- Search: `GET /api/v3/series/lookup?term={searchTerm}`
-- Add: `POST /api/v3/series`
-- Profiles: `GET /api/v3/qualityProfile`
-- Folders: `GET /api/v3/rootfolder`
-
-### Radarr (Movies)
-- Search: `GET /api/v3/movie/lookup?term={searchTerm}`
-- Add: `POST /api/v3/movie`
-- Profiles: `GET /api/v3/qualityProfile`
-- Folders: `GET /api/v3/rootfolder`
-
-## 🛠️ Development
-
 ### Tech Stack
-- **WXT.dev**: Extension build tooling and manifest management
-- **React**: UI components with integrated settings pattern
-- **TypeScript**: Type safety and interfaces
-- **Chrome Extensions API**: Storage, context menus, and Manifest V3
-- **Vite**: Fast build tooling and hot reload
 
-### Scripts
-- `npm run dev`: Start development server with hot reload
-- `npm run build`: Build production version
-- `npm run zip`: Create distribution zip file
-- `npm run compile`: Type check without building
+- **WXT Framework** - Extension build tooling
+- **React** - UI framework
+- **TypeScript** - Type safety
+- **Chrome Extensions API** - Storage, context menus, messaging
 
-### Architecture Highlights
-- **🔄 Integrated Settings**: No separate options page - settings are part of the popup
-- **📱 Mobile-Like UX**: Single window experience with smooth navigation
-- **⚡ Instant Updates**: Settings changes immediately reflect in the main interface
-- **🎯 Compact Design**: All functionality optimized for popup constraints
-
-### Adding New *arr Applications
-
-To add support for new *arr applications:
-
-1. Update the `ArrApp` type in `src/api/types.ts`
-2. Add API endpoints in `src/api/arrApi.ts`
-3. Update the UI to handle the new app type
-4. Add appropriate icons and styling
-
-## 🔧 Troubleshooting
-
-### Connection Issues
-- Verify your *arr application is running and accessible
-- Check that the URL format is correct (include http/https)
-- Ensure the API key is valid (found in your *arr app's Settings > General)
-- Check for CORS issues if connecting to remote instances
-- Use the test button (🔌) in settings to verify connectivity
-
-### Search Issues
-- Make sure your search terms are specific enough
-- Verify the *arr application has access to search providers
-- Check the extension popup for error messages
-- Try switching between different configured *arr apps
-
-### Settings Issues
-- Click the settings gear (⚙️) to access app configuration
-- If settings won't save, check the connection test first
-- Settings are stored in Chrome sync storage and will sync across devices
-
-### Permission Issues
-- Ensure the extension has the necessary permissions in Chrome
-- Check Chrome's extension settings for any blocked permissions
-- The extension needs access to make HTTP requests to your *arr applications
-
-## 🤝 Contributing
+### Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+2. Create a feature branch
 3. Make your changes
-4. Test thoroughly with real *arr applications
-5. Update documentation if needed
-6. Commit your changes (`git commit -m 'Add amazing feature'`)
-7. Push to the branch (`git push origin feature/amazing-feature`)
-8. Submit a pull request
+4. Test thoroughly
+5. Submit a pull request
 
-### Development Guidelines
-- Follow the integrated settings pattern for new features
-- Maintain popup window constraints (400px width)
-- Use TypeScript for all new code
-- Test with both Sonarr and Radarr
-- Update Cursor Rules if adding new architectural patterns
+## Troubleshooting
 
-## 📄 License
+### Connection Issues
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- **Verify URL format**: Include protocol (http:// or https://) and port
+- **Check API key**: Copy from Settings → General → Security in your *arr app
+- **Test connectivity**: Use the "Test Connection" button
+- **Check CORS**: Ensure your *arr app allows browser requests
 
-## 🙏 Acknowledgments
+### Search Issues
 
-- [WXT.dev](https://wxt.dev/) for the excellent Chrome extension framework
-- [*arr Community](https://github.com/Radarr/Radarr) for the fantastic media management applications
-- Chrome Extensions team for Manifest V3 guidance
+- **No results**: Verify the app type matches your search (movies vs TV shows)
+- **API errors**: Check your *arr application logs
+- **Network errors**: Verify your *arr app is accessible from your browser
 
----
+### Installation Issues
 
-**⭐ If you find this extension useful, please give it a star!** 
+- **Development mode**: Ensure Developer mode is enabled in Chrome
+- **Build errors**: Run `npm install` and check for missing dependencies
+- **Permission errors**: Verify the extension has necessary permissions
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- **WXT Framework** for excellent extension development tooling
+- **The *arr Community** for creating amazing media management applications
+- **TMDb & TVDb** for providing the metadata that powers these applications 

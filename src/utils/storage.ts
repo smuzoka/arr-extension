@@ -1,42 +1,76 @@
 import type { ArrApp } from '../api/types';
 
+// Interface for saved form options
+export interface SavedFormOptions {
+  qualityProfileId?: number;
+  rootFolderPath?: string;
+  monitored?: boolean;
+  seasonFolder?: boolean;
+  seriesType?: string;
+  searchForMissing?: boolean;
+  searchForCutoff?: boolean;
+}
+
+const STORAGE_KEYS = {
+  ARR_APPS: 'arr_apps',
+  SELECTED_TEXT: 'selected_text',
+  LAST_USED_OPTIONS: 'last_used_options',
+} as const;
+
 export const storage = {
-  async getApps(): Promise<ArrApp[]> {
-    const result = await chrome.storage.sync.get(['apps']);
-    return result.apps || [];
+  async getArrApps(): Promise<ArrApp[]> {
+    const result = await chrome.storage.sync.get([STORAGE_KEYS.ARR_APPS]);
+    return result[STORAGE_KEYS.ARR_APPS] || [];
   },
 
-  async saveApps(apps: ArrApp[]): Promise<void> {
-    await chrome.storage.sync.set({ apps });
+  async saveArrApps(apps: ArrApp[]): Promise<void> {
+    await chrome.storage.sync.set({ [STORAGE_KEYS.ARR_APPS]: apps });
   },
 
-  async addApp(app: ArrApp): Promise<void> {
-    const apps = await this.getApps();
+  async addArrApp(app: ArrApp): Promise<void> {
+    const apps = await this.getArrApps();
     apps.push(app);
-    await this.saveApps(apps);
+    await this.saveArrApps(apps);
   },
 
-  async updateApp(appId: string, updatedApp: ArrApp): Promise<void> {
-    const apps = await this.getApps();
+  async removeArrApp(appId: string): Promise<void> {
+    const apps = await this.getArrApps();
+    const filteredApps = apps.filter(app => app.id !== appId);
+    await this.saveArrApps(filteredApps);
+  },
+
+  async updateArrApp(appId: string, updatedApp: Partial<ArrApp>): Promise<void> {
+    const apps = await this.getArrApps();
     const index = apps.findIndex(app => app.id === appId);
     if (index !== -1) {
-      apps[index] = updatedApp;
-      await this.saveApps(apps);
+      apps[index] = { ...apps[index], ...updatedApp };
+      await this.saveArrApps(apps);
     }
   },
 
-  async removeApp(appId: string): Promise<void> {
-    const apps = await this.getApps();
-    const filteredApps = apps.filter(app => app.id !== appId);
-    await this.saveApps(filteredApps);
+  async setSelectedText(text: string): Promise<void> {
+    await chrome.storage.local.set({ [STORAGE_KEYS.SELECTED_TEXT]: text });
   },
 
-  async getSearchTerm(): Promise<string> {
-    const result = await chrome.storage.local.get(['searchTerm']);
-    return result.searchTerm || '';
+  async getSelectedText(): Promise<string | null> {
+    const result = await chrome.storage.local.get([STORAGE_KEYS.SELECTED_TEXT]);
+    return result[STORAGE_KEYS.SELECTED_TEXT] || null;
   },
 
-  async setSearchTerm(searchTerm: string): Promise<void> {
-    await chrome.storage.local.set({ searchTerm });
+  async clearSelectedText(): Promise<void> {
+    await chrome.storage.local.remove([STORAGE_KEYS.SELECTED_TEXT]);
+  },
+
+  async saveLastUsedOptions(appType: string, options: SavedFormOptions): Promise<void> {
+    const result = await chrome.storage.local.get([STORAGE_KEYS.LAST_USED_OPTIONS]);
+    const allOptions = result[STORAGE_KEYS.LAST_USED_OPTIONS] || {};
+    allOptions[appType] = options;
+    await chrome.storage.local.set({ [STORAGE_KEYS.LAST_USED_OPTIONS]: allOptions });
+  },
+
+  async getLastUsedOptions(appType: string): Promise<SavedFormOptions | null> {
+    const result = await chrome.storage.local.get([STORAGE_KEYS.LAST_USED_OPTIONS]);
+    const allOptions = result[STORAGE_KEYS.LAST_USED_OPTIONS] || {};
+    return allOptions[appType] || null;
   }
 }; 

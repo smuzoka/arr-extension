@@ -3,95 +3,96 @@ import type {
   SearchResult, 
   QualityProfile, 
   RootFolder, 
-  AddItemRequest, 
-  ApiResponse, 
+  AddSeriesRequest, 
+  AddMovieRequest,
   SystemStatus 
 } from './types';
 
-class ArrApiService {
-  private async makeRequest<T>(
-    url: string, 
-    apiKey: string, 
-    method: 'GET' | 'POST' = 'GET', 
-    body?: any
-  ): Promise<ApiResponse<T>> {
-    try {
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'X-Api-Key': apiKey,
-          'Content-Type': 'application/json',
-        },
-        ...(body && { body: JSON.stringify(body) }),
-      });
+export class ArrApi {
+  private app: ArrApp;
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return { success: true, data };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      };
-    }
+  constructor(app: ArrApp) {
+    this.app = app;
   }
 
-  async testConnection(app: ArrApp): Promise<ApiResponse<SystemStatus>> {
-    const url = `${app.url}/api/v3/system/status`;
-    return this.makeRequest<SystemStatus>(url, app.apiKey);
-  }
-
-  async searchContent(app: ArrApp, searchTerm: string): Promise<ApiResponse<SearchResult[]>> {
-    const endpoint = app.type === 'sonarr' ? 'series' : 'movie';
-    const url = `${app.url}/api/v3/${endpoint}/lookup?term=${encodeURIComponent(searchTerm)}`;
-    return this.makeRequest<SearchResult[]>(url, app.apiKey);
-  }
-
-  async getExistingContent(app: ArrApp): Promise<ApiResponse<SearchResult[]>> {
-    const endpoint = app.type === 'sonarr' ? 'series' : 'movie';
-    const url = `${app.url}/api/v3/${endpoint}`;
-    return this.makeRequest<SearchResult[]>(url, app.apiKey);
-  }
-
-  async getQualityProfiles(app: ArrApp): Promise<ApiResponse<QualityProfile[]>> {
-    const url = `${app.url}/api/v3/qualityProfile`;
-    return this.makeRequest<QualityProfile[]>(url, app.apiKey);
-  }
-
-  async getRootFolders(app: ArrApp): Promise<ApiResponse<RootFolder[]>> {
-    const url = `${app.url}/api/v3/rootfolder`;
-    return this.makeRequest<RootFolder[]>(url, app.apiKey);
-  }
-
-  async addContent(app: ArrApp, item: AddItemRequest): Promise<ApiResponse<any>> {
-    const endpoint = app.type === 'sonarr' ? 'series' : 'movie';
-    const url = `${app.url}/api/v3/${endpoint}`;
-    return this.makeRequest(url, app.apiKey, 'POST', item);
-  }
-
-  async checkIfAdded(app: ArrApp, searchResults: SearchResult[]): Promise<SearchResult[]> {
-    const existingResponse = await this.getExistingContent(app);
+  private async request(endpoint: string, options: RequestInit = {}) {
+    const url = `${this.app.url}/api/v3${endpoint}`;
     
-    if (!existingResponse.success || !existingResponse.data) {
-      return searchResults;
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'X-Api-Key': this.app.apiKey,
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
     }
 
-    const existing = existingResponse.data;
-    
-    return searchResults.map(result => ({
-      ...result,
-      isAdded: existing.some(item => {
-        if (app.type === 'sonarr') {
-          return item.tvdbId === result.tvdbId;
-        } else {
-          return item.tmdbId === result.tmdbId;
-        }
-      })
-    }));
+    return response.json();
+  }
+
+  async testConnection(): Promise<SystemStatus> {
+    return this.request('/system/status');
+  }
+
+  async searchSeries(term: string): Promise<SearchResult[]> {
+    if (this.app.type !== 'sonarr') {
+      throw new Error('This method is only available for Sonarr');
+    }
+    return this.request(`/series/lookup?term=${encodeURIComponent(term)}`);
+  }
+
+  async searchMovies(term: string): Promise<SearchResult[]> {
+    if (this.app.type !== 'radarr') {
+      throw new Error('This method is only available for Radarr');
+    }
+    return this.request(`/movie/lookup?term=${encodeURIComponent(term)}`);
+  }
+
+  async getAllSeries(): Promise<SearchResult[]> {
+    if (this.app.type !== 'sonarr') {
+      throw new Error('This method is only available for Sonarr');
+    }
+    return this.request('/series');
+  }
+
+  async getAllMovies(): Promise<SearchResult[]> {
+    if (this.app.type !== 'radarr') {
+      throw new Error('This method is only available for Radarr');
+    }
+    return this.request('/movie');
+  }
+
+  async getQualityProfiles(): Promise<QualityProfile[]> {
+    return this.request('/qualityProfile');
+  }
+
+  async getRootFolders(): Promise<RootFolder[]> {
+    return this.request('/rootfolder');
+  }
+
+  async addSeries(request: AddSeriesRequest): Promise<SearchResult> {
+    if (this.app.type !== 'sonarr') {
+      throw new Error('This method is only available for Sonarr');
+    }
+    return this.request('/series', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async addMovie(request: AddMovieRequest): Promise<SearchResult> {
+    if (this.app.type !== 'radarr') {
+      throw new Error('This method is only available for Radarr');
+    }
+    return this.request('/movie', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
   }
 }
 
-export const arrApi = new ArrApiService(); 
+export const createArrApi = (app: ArrApp) => new ArrApi(app); 
