@@ -43,6 +43,12 @@ const Popup: React.FC = () => {
     loadSelectedText();
   }, []);
 
+  useEffect(() => {
+    if (selectedApp && searchTerm) {
+      performSearch(searchTerm, selectedApp);
+    }
+  }, [selectedApp]);
+
   const loadApps = async () => {
     try {
       const savedApps = await storage.getArrApps();
