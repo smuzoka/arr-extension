@@ -113,13 +113,12 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ app, result, onSuccess, onCan
     setError(null);
 
     try {
-      const api = createArrApi(app);
-      
       if (app.type === 'sonarr') {
+        const api = createArrApi(app);
         if (!result.tvdbId) {
           throw new Error('Missing TVDB ID for series');
         }
-        
+
         await api.addSeries({
           title: result.title,
           qualityProfileId: selectedQualityProfile,
@@ -133,10 +132,11 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ app, result, onSuccess, onCan
           searchForCutoffUnmetEpisodes: searchForCutoff
         });
       } else if (app.type === 'radarr') {
+        const api = createArrApi(app);
         if (!result.tmdbId) {
           throw new Error('Missing TMDB ID for movie');
         }
-        
+
         await api.addMovie({
           title: result.title,
           qualityProfileId: selectedQualityProfile,
@@ -147,10 +147,10 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ app, result, onSuccess, onCan
           searchForMovie: searchForMissing
         });
       }
-      
+
       // Save options on successful submission
       await saveCurrentOptions();
-      
+
       onSuccess(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add item');

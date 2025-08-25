@@ -71,14 +71,15 @@ const Popup: React.FC = () => {
     }
   };
 
-  const loadExistingItems = async (app: ArrApp) => {
+    const loadExistingItems = async (app: ArrApp) => {
     try {
-      const api = createArrApi(app);
       let existingItems: SearchResult[] = [];
-      
+
       if (app.type === 'sonarr') {
+        const api = createArrApi(app);
         existingItems = await api.getAllSeries();
       } else if (app.type === 'radarr') {
+        const api = createArrApi(app);
         existingItems = await api.getAllMovies();
       }
       
@@ -97,22 +98,23 @@ const Popup: React.FC = () => {
     }
   };
 
-  const performSearch = async (term: string, app: ArrApp) => {
+    const performSearch = async (term: string, app: ArrApp) => {
     if (!term.trim()) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      const api = createArrApi(app);
       let results: SearchResult[] = [];
-      
+
       if (app.type === 'sonarr') {
+        const api = createArrApi(app);
         results = await api.searchSeries(term);
       } else if (app.type === 'radarr') {
+        const api = createArrApi(app);
         results = await api.searchMovies(term);
       }
-      
+
       setSearchResults(results);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Search failed');
