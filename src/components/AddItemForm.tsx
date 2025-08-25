@@ -131,6 +131,9 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ app, result, onSuccess, onCan
           searchForMissingEpisodes: searchForMissing,
           searchForCutoffUnmetEpisodes: searchForCutoff
         });
+
+        await saveCurrentOptions();
+        onSuccess(result);
       } else if (app.type === 'radarr') {
         const api = createArrApi(app);
         if (!result.tmdbId) {
@@ -146,12 +149,12 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ app, result, onSuccess, onCan
           tags: tags ? tags.split(',').map(tag => parseInt(tag.trim())).filter(Boolean) : undefined,
           searchForMovie: searchForMissing
         });
+
+        await saveCurrentOptions();
+        onSuccess(result);
+      } else {
+        throw new Error(`Unsupported app type: ${app.type}`);
       }
-
-      // Save options on successful submission
-      await saveCurrentOptions();
-
-      onSuccess(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add item');
     } finally {
