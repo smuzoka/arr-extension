@@ -706,6 +706,27 @@ body::-webkit-scrollbar-thumb {
   font-size: 14px;
 }
 
+.form-group .input-with-toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.form-group .input-with-toggle input {
+  width: 100%;
+  padding-right: 50px;
+}
+
+.form-group .input-with-toggle .toggle-password {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
 .form-group input:focus,
 .form-group select:focus {
   outline: 2px solid var(--ring);
