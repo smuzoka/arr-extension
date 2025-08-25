@@ -20,34 +20,16 @@ export const getAppIcon = (type: string, props: IconProps = {}) => {
       );
     case 'radarr':
       return (
-        <img 
-          src="/radarr.png" 
-          alt="Radarr" 
-          className={`app-icon-png ${className}`}
-          style={{ width: '20px', height: '20px', ...style }}
-        />
-      );
-    case 'lidarr':
-      return (
-        <img 
-          src="/lidarr.png" 
-          alt="Lidarr" 
-          className={`app-icon-png ${className}`}
-          style={{ width: '20px', height: '20px', ...style }}
-        />
-      );
-    case 'readarr':
-      return (
-        <img 
-          src="/readarr.png" 
-          alt="Readarr" 
+        <img
+          src="/radarr.png"
+          alt="Radarr"
           className={`app-icon-png ${className}`}
           style={{ width: '20px', height: '20px', ...style }}
         />
       );
     default:
       return (
-        <i 
+        <i
           className={`fas fa-server ${className}`}
           style={style}
           title="Unknown App"

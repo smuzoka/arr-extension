@@ -95,7 +95,7 @@ const AppForm: React.FC<AppFormProps> = ({ app, onSubmit, onCancel }) => {
             id="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="My Sonarr"
+            placeholder={`My ${type.charAt(0).toUpperCase() + type.slice(1)}`}
             required
           />
         </div>
