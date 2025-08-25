@@ -11,7 +11,7 @@ interface AddItemFormProps {
   onCancel: () => void;
 }
 
-const AddItemForm: React.FC<AddItemFormProps> = ({ app, result, onSuccess, onCancel: _onCancel }) => {
+const AddItemForm: React.FC<AddItemFormProps> = ({ app, result, onSuccess, onCancel }) => {
   const [qualityProfiles, setQualityProfiles] = useState<QualityProfile[]>([]);
   const [rootFolders, setRootFolders] = useState<RootFolder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -131,6 +131,9 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ app, result, onSuccess, onCan
           searchForMissingEpisodes: searchForMissing,
           searchForCutoffUnmetEpisodes: searchForCutoff
         });
+
+        await saveCurrentOptions();
+        onSuccess(result);
       } else if (app.type === 'radarr') {
         const api = createArrApi(app);
         if (!result.tmdbId) {
@@ -146,12 +149,12 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ app, result, onSuccess, onCan
           tags: tags ? tags.split(',').map(tag => parseInt(tag.trim())).filter(Boolean) : undefined,
           searchForMovie: searchForMissing
         });
+
+        await saveCurrentOptions();
+        onSuccess(result);
+      } else {
+        throw new Error(`Unsupported app type: ${app.type}`);
       }
-
-      // Save options on successful submission
-      await saveCurrentOptions();
-
-      onSuccess(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add item');
     } finally {
@@ -272,17 +275,26 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ app, result, onSuccess, onCan
           </div>
         )}
 
-        <button 
-          type="submit" 
-          className="button" 
-          disabled={submitting}
-          style={{ marginTop: '8px' }}
-        >
-          {submitting ? 'Adding...' : 'Add Item'}
-        </button>
+        <div className="form-actions">
+          <button
+            type="button"
+            className="button secondary"
+            onClick={onCancel}
+            disabled={submitting}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="button"
+            disabled={submitting}
+          >
+            {submitting ? 'Adding...' : 'Add Item'}
+          </button>
+        </div>
       </form>
     </div>
   );
 };
 
-export default AddItemForm; 
+export default AddItemForm;

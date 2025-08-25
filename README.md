@@ -3,7 +3,9 @@
 ArrExtension lets you highlight text in your browser and search it in your *arr servers.
 
 ## Features
+
 - Search and add items in Sonarr and Radarr.
+
 - Test connections and manage multiple servers.
 
 ## Development
