@@ -1,7 +1,7 @@
 export interface ArrApp {
   id: string;
   name: string;
-  type: 'sonarr' | 'radarr' | 'lidarr' | 'readarr';
+  type: 'sonarr' | 'radarr';
   url: string;
   apiKey: string;
   icon: string;
