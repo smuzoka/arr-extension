@@ -13,6 +13,7 @@ const AppForm: React.FC<AppFormProps> = ({ app, onSubmit, onCancel }) => {
   const [type, setType] = useState<ArrApp['type']>('sonarr');
   const [url, setUrl] = useState('');
   const [apiKey, setApiKey] = useState('');
+  const [showApiKey, setShowApiKey] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
@@ -132,14 +133,23 @@ const AppForm: React.FC<AppFormProps> = ({ app, onSubmit, onCancel }) => {
 
         <div className="form-group">
           <label htmlFor="apiKey">API Key</label>
-          <input
-            type="password"
-            id="apiKey"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder="Your API key"
-            required
-          />
+          <div className="input-with-toggle">
+            <input
+              type={showApiKey ? 'text' : 'password'}
+              id="apiKey"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="Your API key"
+              required
+            />
+            <button
+              type="button"
+              className="toggle-password"
+              onClick={() => setShowApiKey((prev) => !prev)}
+            >
+              {showApiKey ? 'Hide' : 'Show'}
+            </button>
+          </div>
           <small className="form-group-description">
             Found in Settings → General → Security in your *arr app
           </small>
