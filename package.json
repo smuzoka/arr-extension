@@ -22,6 +22,8 @@
     "arr",
     "sonarr",
     "radarr",
+    "lidarr",
+    "readarr",
     "browser-extension"
   ],
   "author": "",
