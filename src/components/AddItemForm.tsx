@@ -11,7 +11,7 @@ interface AddItemFormProps {
   onCancel: () => void;
 }
 
-const AddItemForm: React.FC<AddItemFormProps> = ({ app, result, onSuccess, onCancel: _onCancel }) => {
+const AddItemForm: React.FC<AddItemFormProps> = ({ app, result, onSuccess, onCancel }) => {
   const [qualityProfiles, setQualityProfiles] = useState<QualityProfile[]>([]);
   const [rootFolders, setRootFolders] = useState<RootFolder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -275,17 +275,26 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ app, result, onSuccess, onCan
           </div>
         )}
 
-        <button 
-          type="submit" 
-          className="button" 
-          disabled={submitting}
-          style={{ marginTop: '8px' }}
-        >
-          {submitting ? 'Adding...' : 'Add Item'}
-        </button>
+        <div className="form-actions">
+          <button
+            type="button"
+            className="button secondary"
+            onClick={onCancel}
+            disabled={submitting}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="button"
+            disabled={submitting}
+          >
+            {submitting ? 'Adding...' : 'Add Item'}
+          </button>
+        </div>
       </form>
     </div>
   );
 };
 
-export default AddItemForm; 
+export default AddItemForm;
