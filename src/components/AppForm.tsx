@@ -111,8 +111,6 @@ const AppForm: React.FC<AppFormProps> = ({ app, onSubmit, onCancel }) => {
           >
             <option value="sonarr">Sonarr (TV Shows)</option>
             <option value="radarr">Radarr (Movies)</option>
-            <option value="lidarr">Lidarr (Music)</option>
-            <option value="readarr">Readarr (Books)</option>
           </select>
         </div>
 

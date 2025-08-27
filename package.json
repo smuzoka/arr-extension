@@ -1,6 +1,6 @@
 {
   "name": "ArrExtension",
-  "version": "1.0.0",
+  "version": "202508.1.0",
   "description": "ArrExtension - Chrome Extension for *arr applications",
   "main": "index.js",
   "type": "module",
@@ -11,7 +11,9 @@
     "build:firefox": "wxt build -b firefox",
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
-    "postinstall": "wxt prepare"
+    "postinstall": "wxt prepare",
+    "version:minor": "node bump-version.js minor",
+    "version:major": "node bump-version.js major"
   },
   "repository": {
     "type": "git",
@@ -22,8 +24,6 @@
     "arr",
     "sonarr",
     "radarr",
-    "lidarr",
-    "readarr",
     "browser-extension"
   ],
   "author": "",
