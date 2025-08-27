@@ -28,57 +28,115 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ app, result, onSuccess, onCan
   const [searchForMissing, setSearchForMissing] = useState(true);
   const [searchForCutoff, setSearchForCutoff] = useState(false);
 
+  const METADATA_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
   useEffect(() => {
     loadFormData();
   }, []);
 
+  const applySavedOptions = (
+    profiles: QualityProfile[],
+    folders: RootFolder[],
+    savedOptions: SavedFormOptions | null
+  ) => {
+    if (savedOptions) {
+      if (
+        savedOptions.qualityProfileId &&
+        profiles.find(p => p.id === savedOptions.qualityProfileId)
+      ) {
+        setSelectedQualityProfile(savedOptions.qualityProfileId);
+      } else if (profiles.length > 0) {
+        setSelectedQualityProfile(profiles[0].id);
+      }
+
+      if (
+        savedOptions.rootFolderPath &&
+        folders.find(f => f.path === savedOptions.rootFolderPath)
+      ) {
+        setSelectedRootFolder(savedOptions.rootFolderPath);
+      } else if (folders.length > 0) {
+        setSelectedRootFolder(folders[0].path);
+      }
+
+      if (savedOptions.monitored !== undefined)
+        setMonitored(savedOptions.monitored);
+      if (savedOptions.seasonFolder !== undefined)
+        setSeasonFolder(savedOptions.seasonFolder);
+      if (savedOptions.seriesType) setSeriesType(savedOptions.seriesType);
+      if (savedOptions.searchForMissing !== undefined)
+        setSearchForMissing(savedOptions.searchForMissing);
+      if (savedOptions.searchForCutoff !== undefined)
+        setSearchForCutoff(savedOptions.searchForCutoff);
+    } else {
+      if (profiles.length > 0) {
+        setSelectedQualityProfile(profiles[0].id);
+      }
+      if (folders.length > 0) {
+        setSelectedRootFolder(folders[0].path);
+      }
+    }
+  };
+
   const loadFormData = async () => {
-    try {
-      const api = createArrApi(app);
-      const [profiles, folders, savedOptions] = await Promise.all([
-        api.getQualityProfiles(),
-        api.getRootFolders(),
-        storage.getLastUsedOptions(app.type)
-      ]);
-      
-      setQualityProfiles(profiles);
-      setRootFolders(folders);
-      
-      // Apply saved options if available, otherwise use defaults
-      if (savedOptions) {
-        // Set quality profile - use saved if available and exists in current profiles
-        if (savedOptions.qualityProfileId && profiles.find(p => p.id === savedOptions.qualityProfileId)) {
-          setSelectedQualityProfile(savedOptions.qualityProfileId);
-        } else if (profiles.length > 0) {
-          setSelectedQualityProfile(profiles[0].id);
+    setLoading(true);
+    const savedOptions = await storage.getLastUsedOptions(app.type);
+    const cached = await storage.getArrMetadata(app.id);
+    const now = Date.now();
+    let usedCache = false;
+
+    if (cached && now - cached.timestamp < METADATA_TTL) {
+      setQualityProfiles(cached.qualityProfiles);
+      setRootFolders(cached.rootFolders);
+      applySavedOptions(cached.qualityProfiles, cached.rootFolders, savedOptions);
+      setLoading(false);
+      usedCache = true;
+    }
+
+    const fetchAndUpdate = async () => {
+      try {
+        const api = createArrApi(app);
+        const [profiles, folders] = await Promise.all([
+          api.getQualityProfiles(),
+          api.getRootFolders()
+        ]);
+
+        setQualityProfiles(profiles);
+        setRootFolders(folders);
+        await storage.saveArrMetadata(app.id, {
+          qualityProfiles: profiles,
+          rootFolders: folders,
+          timestamp: Date.now()
+        });
+
+        if (!usedCache) {
+          applySavedOptions(profiles, folders, savedOptions);
+        } else {
+          setSelectedQualityProfile(prev =>
+            prev && profiles.find(p => p.id === prev)
+              ? prev
+              : profiles[0]?.id ?? null
+          );
+          setSelectedRootFolder(prev =>
+            prev && folders.find(f => f.path === prev)
+              ? prev
+              : folders[0]?.path ?? null
+          );
         }
-        
-        // Set root folder - use saved if available and exists in current folders
-        if (savedOptions.rootFolderPath && folders.find(f => f.path === savedOptions.rootFolderPath)) {
-          setSelectedRootFolder(savedOptions.rootFolderPath);
-        } else if (folders.length > 0) {
-          setSelectedRootFolder(folders[0].path);
+      } catch (err) {
+        if (!usedCache) {
+          setError(err instanceof Error ? err.message : 'Failed to load form data');
         }
-        
-        // Apply other saved options
-        if (savedOptions.monitored !== undefined) setMonitored(savedOptions.monitored);
-        if (savedOptions.seasonFolder !== undefined) setSeasonFolder(savedOptions.seasonFolder);
-        if (savedOptions.seriesType) setSeriesType(savedOptions.seriesType);
-        if (savedOptions.searchForMissing !== undefined) setSearchForMissing(savedOptions.searchForMissing);
-        if (savedOptions.searchForCutoff !== undefined) setSearchForCutoff(savedOptions.searchForCutoff);
-      } else {
-        // Set defaults when no saved options
-        if (profiles.length > 0) {
-          setSelectedQualityProfile(profiles[0].id);
-        }
-        if (folders.length > 0) {
-          setSelectedRootFolder(folders[0].path);
+      } finally {
+        if (!usedCache) {
+          setLoading(false);
         }
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load form data');
-    } finally {
-      setLoading(false);
+    };
+
+    if (usedCache) {
+      fetchAndUpdate();
+    } else {
+      await fetchAndUpdate();
     }
   };
 
