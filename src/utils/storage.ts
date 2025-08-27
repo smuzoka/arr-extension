@@ -1,4 +1,4 @@
-import type { ArrApp } from '../api/types';
+import type { ArrApp, QualityProfile, RootFolder } from '../api/types';
 
 // Interface for saved form options
 export interface SavedFormOptions {
@@ -15,7 +15,14 @@ const STORAGE_KEYS = {
   ARR_APPS: 'arr_apps',
   SELECTED_TEXT: 'selected_text',
   LAST_USED_OPTIONS: 'last_used_options',
+  ARR_METADATA: 'arr_metadata',
 } as const;
+
+export interface CachedArrMetadata {
+  qualityProfiles: QualityProfile[];
+  rootFolders: RootFolder[];
+  timestamp: number;
+}
 
 export const storage = {
   async getArrApps(): Promise<ArrApp[]> {
@@ -72,5 +79,18 @@ export const storage = {
     const result = await chrome.storage.local.get([STORAGE_KEYS.LAST_USED_OPTIONS]);
     const allOptions = result[STORAGE_KEYS.LAST_USED_OPTIONS] || {};
     return allOptions[appType] || null;
+  },
+
+  async saveArrMetadata(appId: string, metadata: CachedArrMetadata): Promise<void> {
+    const result = await chrome.storage.local.get([STORAGE_KEYS.ARR_METADATA]);
+    const allMetadata = result[STORAGE_KEYS.ARR_METADATA] || {};
+    allMetadata[appId] = metadata;
+    await chrome.storage.local.set({ [STORAGE_KEYS.ARR_METADATA]: allMetadata });
+  },
+
+  async getArrMetadata(appId: string): Promise<CachedArrMetadata | null> {
+    const result = await chrome.storage.local.get([STORAGE_KEYS.ARR_METADATA]);
+    const allMetadata = result[STORAGE_KEYS.ARR_METADATA] || {};
+    return allMetadata[appId] || null;
   }
-}; 
+};
