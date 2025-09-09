@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { storage } from '../utils/storage';
 import { createArrApi } from '../api/arrApi';
 import type { ArrApp, SearchResult } from '../api/types';
@@ -32,6 +32,9 @@ const Popup: React.FC = () => {
       return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
   });
+
+  // Track the latest search to prevent outdated results from overriding newer searches
+  const searchIdRef = useRef(0);
 
   useEffect(() => {
     document.body.classList.toggle('dark-mode', theme === 'dark');
@@ -107,6 +110,7 @@ const Popup: React.FC = () => {
     const performSearch = async (term: string, app: ArrApp) => {
     if (!term.trim()) return;
 
+    const currentSearchId = ++searchIdRef.current;
     setLoading(true);
     setError(null);
 
@@ -121,11 +125,17 @@ const Popup: React.FC = () => {
         results = await api.searchMovies(term);
       }
 
-      setSearchResults(results);
+      if (currentSearchId === searchIdRef.current) {
+        setSearchResults(results);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Search failed');
+      if (currentSearchId === searchIdRef.current) {
+        setError(err instanceof Error ? err.message : 'Search failed');
+      }
     } finally {
-      setLoading(false);
+      if (currentSearchId === searchIdRef.current) {
+        setLoading(false);
+      }
     }
   };
 
