@@ -5,7 +5,7 @@ export default defineConfig({
   manifest: {
     name: 'ArrExtension',
     description: 'Search and add media to your *arr applications.',
-    version: '202507.07.1',
+    version: '1.0.0',
     permissions: [
       'storage',
       'contextMenus',

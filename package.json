@@ -1,6 +1,6 @@
 {
   "name": "ArrExtension",
-  "version": "202508.1.0",
+  "version": "1.0.0",
   "description": "ArrExtension - Chrome Extension for *arr applications",
   "main": "index.js",
   "type": "module",
@@ -26,8 +26,8 @@
     "radarr",
     "browser-extension"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "Sydney Muzoka",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/smuzoka/arr-extension/issues"
   },
