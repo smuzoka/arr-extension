@@ -163,6 +163,123 @@ body::-webkit-scrollbar-thumb {
   outline-offset: 2px;
 }
 
+.search-filters {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.search-filters-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filters-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--muted);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.filters-toggle:hover {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}
+
+.filter-badge {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+
+.filter-count {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.filters-clear {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 0;
+}
+
+.filters-clear:hover {
+  text-decoration: underline;
+}
+
+.search-filters-body {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.filter-select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 12px;
+}
+
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.filter-chip {
+  border: 1px solid var(--border);
+  background: var(--muted);
+  color: var(--muted-foreground);
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.filter-chip.active {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+
+.filter-empty {
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+
 .settings-button {
   padding: 8px;
   border: none;

@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { storage } from '../utils/storage';
 import { createArrApi } from '../api/arrApi';
-import type { ArrApp, SearchResult } from '../api/types';
+import type { ArrApp, SearchFilters, SearchResult } from '../api/types';
 import SearchBar from './SearchBar';
 import AppSwitcher from './AppSwitcher';
 import ResultCard from './ResultCard';
 import AddItemForm from './AddItemForm';
 import AppForm from './AppForm';
+import SearchFiltersComponent, { type SearchFilterOptions } from './SearchFilters';
 import { getAppIcon, SettingsIcon, CloseIcon, MoonIcon, SunIcon } from '../utils/icons';
 
 type ViewState = 'search' | 'add' | 'settings';
@@ -16,6 +17,12 @@ const Popup: React.FC = () => {
   const [selectedApp, setSelectedApp] = useState<ArrApp | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [filters, setFilters] = useState<SearchFilters>({
+    year: null,
+    genres: [],
+    network: null,
+    language: null
+  });
   const [addedItems, setAddedItems] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +47,15 @@ const Popup: React.FC = () => {
     document.body.classList.toggle('dark-mode', theme === 'dark');
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  const resetFilters = () => {
+    setFilters({
+      year: null,
+      genres: [],
+      network: null,
+      language: null
+    });
+  };
 
   useEffect(() => {
     loadApps();
@@ -111,6 +127,7 @@ const Popup: React.FC = () => {
     if (!term.trim()) return;
 
     const currentSearchId = ++searchIdRef.current;
+    resetFilters();
     setLoading(true);
     setError(null);
 
@@ -141,6 +158,7 @@ const Popup: React.FC = () => {
 
   const handleAppChange = async (app: ArrApp) => {
     setSelectedApp(app);
+    resetFilters();
     await loadExistingItems(app);
     if (searchTerm) {
       await performSearch(searchTerm, app);
@@ -153,6 +171,97 @@ const Popup: React.FC = () => {
       await performSearch(term, selectedApp);
     }
   };
+
+  const filteredResults = useMemo(() => {
+    if (searchResults.length === 0) return [];
+
+    const hasActiveFilters = Boolean(
+      filters.year ||
+      filters.network ||
+      filters.language ||
+      (filters.genres && filters.genres.length > 0)
+    );
+
+    if (!hasActiveFilters) return searchResults;
+
+    const yearFilter = filters.year ?? null;
+    const networkFilter = filters.network?.trim().toLowerCase();
+    const languageFilter = filters.language?.trim().toLowerCase();
+    const selectedGenres = (filters.genres ?? [])
+      .map(genre => genre.trim().toLowerCase())
+      .filter(Boolean);
+
+    return searchResults.filter(result => {
+      if (yearFilter && result.year !== yearFilter) {
+        return false;
+      }
+
+      if (networkFilter) {
+        const network = result.network?.trim().toLowerCase();
+        if (!network || network !== networkFilter) {
+          return false;
+        }
+      }
+
+      if (languageFilter) {
+        const language = (result.language ?? result.originalLanguage?.name)
+          ?.trim()
+          .toLowerCase();
+        if (!language || language !== languageFilter) {
+          return false;
+        }
+      }
+
+      if (selectedGenres.length > 0) {
+        const resultGenres = (result.genres ?? [])
+          .map(genre => genre.trim().toLowerCase())
+          .filter(Boolean);
+        const matchesGenre = selectedGenres.some(genre => resultGenres.includes(genre));
+        if (!matchesGenre) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [filters, searchResults]);
+
+  const filterOptions = useMemo<SearchFilterOptions>(() => {
+    const years = new Set<number>();
+    const genres = new Set<string>();
+    const networks = new Set<string>();
+    const languages = new Set<string>();
+
+    filteredResults.forEach(result => {
+      if (result.year && result.year > 0) {
+        years.add(result.year);
+      }
+
+      result.genres?.forEach(genre => {
+        const normalized = genre?.trim();
+        if (normalized) {
+          genres.add(normalized);
+        }
+      });
+
+      const network = result.network?.trim();
+      if (network) {
+        networks.add(network);
+      }
+
+      const language = (result.language ?? result.originalLanguage?.name)?.trim();
+      if (language) {
+        languages.add(language);
+      }
+    });
+
+    return {
+      years: Array.from(years).sort((a, b) => b - a),
+      genres: Array.from(genres).sort((a, b) => a.localeCompare(b)),
+      networks: Array.from(networks).sort((a, b) => a.localeCompare(b)),
+      languages: Array.from(languages).sort((a, b) => a.localeCompare(b))
+    };
+  }, [filteredResults]);
 
   const handleResultClick = (result: SearchResult) => {
     setSelectedResult(result);
@@ -347,6 +456,16 @@ const Popup: React.FC = () => {
             placeholder={selectedApp ? `Search ${selectedApp.name}...` : 'Select an app first'}
           />
 
+          {searchResults.length > 0 && (
+            <SearchFiltersComponent
+              filters={filters}
+              options={filterOptions}
+              onChange={setFilters}
+              totalCount={searchResults.length}
+              filteredCount={filteredResults.length}
+            />
+          )}
+
           {/* No Apps Message */}
           {apps.length === 0 && (
             <div className="no-apps-message">
@@ -381,7 +500,7 @@ const Popup: React.FC = () => {
           {/* Search Results */}
           {searchResults.length > 0 && (
             <div className="search-results">
-              {searchResults.map((result) => {
+              {filteredResults.map((result) => {
                 // Check if item is added using external identifier
                 let externalId: number | undefined;
                 if (selectedApp?.type === 'sonarr') {

@@ -85,6 +85,9 @@ temp/
 *.njsproj
 *.sln
 *.sw?
+openspec/
+AGENTS.md
+.agent/
 
 # OS generated files
 .DS_Store

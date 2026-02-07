@@ -1,7 +1,7 @@
 export interface ArrApp {
   id: string;
   name: string;
-  type: 'sonarr' | 'radarr';
+  type: "sonarr" | "radarr";
   url: string;
   apiKey: string;
   icon: string;
@@ -44,6 +44,13 @@ export interface SearchResult {
   remotePoster?: string;
 }
 
+export type SearchFilters = {
+  year?: number | null;
+  genres?: string[];
+  network?: string | null;
+  language?: string | null;
+};
+
 export interface QualityProfile {
   id: number;
   name: string;
@@ -81,4 +88,4 @@ export interface SystemStatus {
   version: string;
   branch: string;
   authentication: string;
-} 
+}
