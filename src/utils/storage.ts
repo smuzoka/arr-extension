@@ -1,4 +1,4 @@
-import type { ArrApp, ArrAppWithKey, QualityProfile, RootFolder } from '../api/types';
+import type { ArrApp, ArrAppWithKey, QualityProfile, RootFolder, SearchResult } from '../api/types';
 
 // Interface for saved form options
 export interface SavedFormOptions {
@@ -18,6 +18,7 @@ const STORAGE_KEYS = {
   SELECTED_APP_ID: 'selected_app_id',
   LAST_USED_OPTIONS: 'last_used_options',
   ARR_METADATA: 'arr_metadata',
+  ARR_EXISTING_ITEMS: 'arr_existing_items',
 } as const;
 
 type StoredArrApp = Omit<ArrApp, 'apiKey'>;
@@ -25,6 +26,11 @@ type StoredArrApp = Omit<ArrApp, 'apiKey'>;
 export interface CachedArrMetadata {
   qualityProfiles: QualityProfile[];
   rootFolders: RootFolder[];
+  timestamp: number;
+}
+
+export interface CachedExistingItems {
+  items: SearchResult[];
   timestamp: number;
 }
 
@@ -163,5 +169,21 @@ export const storage = {
 
     await writeApiKeys(nextKeys);
     await chrome.storage.sync.set({ [STORAGE_KEYS.ARR_APPS]: sanitizedApps });
+  },
+
+  async getExistingItems(appId: string): Promise<CachedExistingItems | null> {
+    const result = await chrome.storage.local.get([STORAGE_KEYS.ARR_EXISTING_ITEMS]);
+    const allItems = result[STORAGE_KEYS.ARR_EXISTING_ITEMS] || {};
+    return allItems[appId] || null;
+  },
+
+  async saveExistingItems(appId: string, items: SearchResult[]): Promise<void> {
+    const result = await chrome.storage.local.get([STORAGE_KEYS.ARR_EXISTING_ITEMS]);
+    const allItems = result[STORAGE_KEYS.ARR_EXISTING_ITEMS] || {};
+    allItems[appId] = {
+      items,
+      timestamp: Date.now()
+    };
+    await chrome.storage.local.set({ [STORAGE_KEYS.ARR_EXISTING_ITEMS]: allItems });
   }
 };
