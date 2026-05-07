@@ -44,7 +44,7 @@ module.exports = {
     "lint": "eslint . --ext .ts,.tsx"
   },
   "devDependencies": {
-    "eslint": "^9.0.0",
+    "eslint": "^8.56.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint-plugin-react-hooks": "^4.6.0"
@@ -490,6 +490,37 @@ test('save server with valid URL prompts for permission', async () => {
   await page.getByRole('button', { name: /add app/i }).click();
 
   await expect(page.getByText('App added successfully')).toBeVisible();
+
+  await context.close();
+});
+
+test('search and add item flow', async () => {
+  const { context, page } = await launchExtension();
+
+  // Assumes an app is already configured and a local *arr server is running
+  await page.getByPlaceholder(/search/i).fill('Test');
+  await page.waitForSelector('.result-card');
+
+  await page.locator('.result-card').first().getByRole('button', { name: /add/i }).click();
+  await page.getByRole('button', { name: /add/i }).click();
+
+  await expect(page.getByText(/added successfully/i)).toBeVisible();
+
+  await context.close();
+});
+
+test('remove item with custom confirm dialog', async () => {
+  const { context, page } = await launchExtension();
+
+  // Navigate to existing items and trigger removal
+  await page.locator('.existing-item').first().getByRole('button', { name: /remove/i }).click();
+
+  // Confirm dialog should appear instead of native confirm
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.getByText(/remove .+ from your library/i)).toBeVisible();
+
+  await page.getByRole('button', { name: /confirm/i }).click();
+  await expect(page.getByRole('dialog')).not.toBeVisible();
 
   await context.close();
 });

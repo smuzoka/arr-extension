@@ -58,43 +58,43 @@ const Popup: React.FC = () => {
   };
 
   useEffect(() => {
-    loadApps();
-    loadSelectedText();
+    let isMounted = true;
+
+    const initializePopup = async () => {
+      try {
+        const savedApps = await storage.getArrApps();
+        if (!isMounted) return;
+
+        setApps(savedApps);
+        const initialApp = savedApps[0] ?? null;
+        setSelectedApp(initialApp);
+
+        if (initialApp) {
+          await loadExistingItems(initialApp);
+        }
+
+        const text = await storage.getSelectedText();
+        if (!isMounted) return;
+
+        if (text) {
+          setSearchTerm(text);
+        }
+      } catch (err) {
+        setError('Failed to load configured apps');
+      }
+    };
+
+    initializePopup();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
     if (selectedApp && searchTerm) {
       performSearch(searchTerm, selectedApp);
     }
-  }, [selectedApp]);
-
-  const loadApps = async () => {
-    try {
-      const savedApps = await storage.getArrApps();
-      setApps(savedApps);
-      if (savedApps.length > 0) {
-        setSelectedApp(savedApps[0]);
-        await loadExistingItems(savedApps[0]);
-      }
-    } catch (err) {
-      setError('Failed to load configured apps');
-    }
-  };
-
-  const loadSelectedText = async () => {
-    try {
-      const text = await storage.getSelectedText();
-      if (text) {
-        setSearchTerm(text);
-        // Auto-search if we have a selected app
-        if (selectedApp) {
-          await performSearch(text, selectedApp);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to load selected text:', err);
-    }
-  };
+  }, [searchTerm, selectedApp]);
 
     const loadExistingItems = async (app: ArrApp) => {
     try {
@@ -165,11 +165,8 @@ const Popup: React.FC = () => {
     }
   };
 
-  const handleSearch = async (term: string) => {
+  const handleSearch = (term: string) => {
     setSearchTerm(term);
-    if (selectedApp) {
-      await performSearch(term, selectedApp);
-    }
   };
 
   const filteredResults = useMemo(() => {

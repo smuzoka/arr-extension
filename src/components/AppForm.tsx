@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { createArrApi } from '../api/arrApi';
 import type { ArrApp } from '../api/types';
+import {
+  getOrigin,
+  isValidApiKey,
+  isValidHttpUrl,
+  normalizeUrl,
+  MIN_API_KEY_LENGTH
+} from '../utils/validators';
 
 interface AppFormProps {
   app?: ArrApp | null;
@@ -16,6 +23,15 @@ const AppForm: React.FC<AppFormProps> = ({ app, onSubmit, onCancel }) => {
   const [showApiKey, setShowApiKey] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const urlError = url && !isValidHttpUrl(url)
+    ? 'Enter a valid http or https URL.'
+    : null;
+  const apiKeyError = apiKey && !isValidApiKey(apiKey)
+    ? `API key must be at least ${MIN_API_KEY_LENGTH} characters.`
+    : null;
+  const isFormValid = Boolean(name.trim()) && Boolean(type) && !urlError && !apiKeyError;
 
   useEffect(() => {
     if (app) {
@@ -26,24 +42,42 @@ const AppForm: React.FC<AppFormProps> = ({ app, onSubmit, onCancel }) => {
     }
   }, [app]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const requestOriginPermission = async (rawUrl: string): Promise<boolean> => {
+    const origin = getOrigin(rawUrl);
+    if (!origin) {
+      return false;
+    }
+    return chrome.permissions.request({ origins: [`${origin}/*`] });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!name || !type || !url || !apiKey) {
+    setFormError(null);
+
+    if (!isFormValid) {
+      setFormError('Fix validation errors before saving.');
       return;
     }
 
-          onSubmit({
-        name,
-        type,
-        url: url.replace(/\/$/, ''), // Remove trailing slash
-        apiKey,
-        icon: ''
-      });
+    const normalizedUrl = normalizeUrl(url);
+    const granted = await requestOriginPermission(normalizedUrl);
+
+    if (!granted) {
+      setFormError('Permission denied for this server origin.');
+      return;
+    }
+
+    onSubmit({
+      name: name.trim(),
+      type,
+      url: normalizedUrl,
+      apiKey,
+      icon: ''
+    });
   };
 
   const handleTestConnection = async () => {
-    if (!url || !apiKey) {
+    if (!url || !apiKey || urlError || apiKeyError) {
       setTestResult({ success: false, message: 'Please fill in URL and API Key first' });
       return;
     }
@@ -56,7 +90,7 @@ const AppForm: React.FC<AppFormProps> = ({ app, onSubmit, onCancel }) => {
         id: 'test',
         name: 'Test',
         type,
-        url: url.replace(/\/$/, ''),
+        url: normalizeUrl(url),
         apiKey,
         icon: ''
       };
@@ -85,6 +119,11 @@ const AppForm: React.FC<AppFormProps> = ({ app, onSubmit, onCancel }) => {
       {testResult && (
         <div className={`message ${testResult.success ? 'success' : 'error'}`}>
           {testResult.message}
+        </div>
+      )}
+      {formError && (
+        <div className="message error">
+          {formError}
         </div>
       )}
 
@@ -122,8 +161,12 @@ const AppForm: React.FC<AppFormProps> = ({ app, onSubmit, onCancel }) => {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="http://localhost:8989"
+            aria-invalid={Boolean(urlError)}
             required
           />
+          {urlError && (
+            <small className="form-group-description error">{urlError}</small>
+          )}
           <small className="form-group-description">
             Include the protocol (http:// or https://) and port number if needed
           </small>
@@ -138,6 +181,7 @@ const AppForm: React.FC<AppFormProps> = ({ app, onSubmit, onCancel }) => {
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="Your API key"
+              aria-invalid={Boolean(apiKeyError)}
               required
             />
             <button
@@ -148,6 +192,9 @@ const AppForm: React.FC<AppFormProps> = ({ app, onSubmit, onCancel }) => {
               {showApiKey ? 'Hide' : 'Show'}
             </button>
           </div>
+          {apiKeyError && (
+            <small className="form-group-description error">{apiKeyError}</small>
+          )}
           <small className="form-group-description">
             Found in Settings → General → Security in your *arr app
           </small>
@@ -158,14 +205,14 @@ const AppForm: React.FC<AppFormProps> = ({ app, onSubmit, onCancel }) => {
             type="button"
             className="button secondary"
             onClick={handleTestConnection}
-            disabled={testing || !url || !apiKey}
+            disabled={testing || !url || !apiKey || Boolean(urlError) || Boolean(apiKeyError)}
           >
             {testing ? 'Testing...' : 'Test Connection'}
           </button>
           <button type="button" className="button secondary" onClick={onCancel}>
             Cancel
           </button>
-          <button type="submit" className="button">
+          <button type="submit" className="button" disabled={!isFormValid}>
             {app ? 'Update App' : 'Add App'}
           </button>
         </div>

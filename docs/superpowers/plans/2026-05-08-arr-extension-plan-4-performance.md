@@ -274,8 +274,13 @@ git commit -m "perf: cache search results and memoize callbacks"
 **Files:**
 - Modify: [src/components/ResultCard.tsx](src/components/ResultCard.tsx)
 
+> **Note:** This task defines an inline placeholder fallback. Plan 5 Task 1 will later extract it into a shared `PLACEHOLDER_POSTER` constant.
+
 - [ ] **Step 1: Add lazy loading to poster**
 ```tsx
+const FALLBACK_POSTER =
+  'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iOTAiIHZpZXdCb3g9IjAgMCA2MCA5MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjkwIiBmaWxsPSIjZjNmNGY2Ii8+CjxwYXRoIGQ9Ik0yMCA0NUwyNSAzNUwzNSA0NUw0MCAzNUw0NSA0NUw0MCA1NUwzNSA0NUwyNSA1NUwyMCA0NVoiIGZpbGw9IiNkMWQ1ZGIiLz4KPC9zdmc+';
+
 <img
   src={posterUrl}
   alt={result.title}
@@ -286,7 +291,7 @@ git commit -m "perf: cache search results and memoize callbacks"
     if (img.src !== result.remotePoster && result.remotePoster) {
       img.src = result.remotePoster;
     } else {
-      img.src = PLACEHOLDER_POSTER;
+      img.src = FALLBACK_POSTER;
     }
   }}
 />

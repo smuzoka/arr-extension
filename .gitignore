@@ -13,6 +13,9 @@ build/
 # WXT specific
 .wxt/
 
+# Graphify output
+graphify-out/
+
 # Environment variables
 .env
 .env.local
@@ -106,3 +109,4 @@ Thumbs.db
 # Local development
 .env.local
 requirements/
+.github/skills/
