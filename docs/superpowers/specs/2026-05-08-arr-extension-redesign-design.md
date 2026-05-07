@@ -98,7 +98,8 @@ ArrExtension is a WXT-based Chrome extension that lets users search and add item
 **Tooling (minimal)**
 - Vitest + Testing Library for unit/component tests.
 - Playwright for local-only E2E tests.
-- ESLint/Prettier only if required to enforce hook dependencies.
+- Minimal ESLint with `@typescript-eslint` and `eslint-plugin-react-hooks` to enforce exhaustive deps and reduce closure bugs during refactor.
+- Prettier optional for formatting consistency.
 
 **Unit tests**
 - Storage migration and API key split.
@@ -116,11 +117,11 @@ ArrExtension is a WXT-based Chrome extension that lets users search and add item
 
 ## Plan Sequencing (Single Phase, Multiple Plans)
 1. **Plan 1 - Foundations:** race condition fix, URL validation, permission flow.
-2. **Plan 2 - Storage & Security:** split storage, migration, remove broad permissions.
+2. **Plan 2 - Storage & Security:** split storage, migration, remove broad permissions, sync `wxt.config.ts` version from `package.json`.
 3. **Plan 3 - Architecture:** decompose Popup, remove Readarr/Lidarr, types cleanup.
 4. **Plan 4 - Performance:** timeout leak, caching, useCallback, lazy images.
 5. **Plan 5 - UX/Accessibility:** monitored toggle, placeholder const, onKeyDown, aria-labels, theme listener, confirm dialog.
-6. **Plan 6 - Testing & Tooling:** unit tests, local-only E2E tests, minimal linting.
+6. **Plan 6 - Testing & Tooling:** unit tests, local-only E2E tests, minimal ESLint with react-hooks enforcement.
 
 ## Risks and Mitigations
 - **Permission denial**: show clear inline error and block save.
