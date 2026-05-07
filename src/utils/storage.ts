@@ -1,4 +1,4 @@
-import type { ArrApp, QualityProfile, RootFolder } from '../api/types';
+import type { ArrApp, ArrAppWithKey, QualityProfile, RootFolder } from '../api/types';
 
 // Interface for saved form options
 export interface SavedFormOptions {
@@ -15,6 +15,7 @@ const STORAGE_KEYS = {
   ARR_APPS: 'arr_apps',
   ARR_API_KEYS: 'arr_api_keys',
   SELECTED_TEXT: 'selected_text',
+  SELECTED_APP_ID: 'selected_app_id',
   LAST_USED_OPTIONS: 'last_used_options',
   ARR_METADATA: 'arr_metadata',
 } as const;
@@ -37,7 +38,7 @@ const writeApiKeys = async (keys: Record<string, string>): Promise<void> => {
 };
 
 export const storage = {
-  async getArrApps(): Promise<ArrApp[]> {
+  async getArrApps(): Promise<ArrAppWithKey[]> {
     const result = await chrome.storage.sync.get([STORAGE_KEYS.ARR_APPS]);
     const storedApps: StoredArrApp[] = result[STORAGE_KEYS.ARR_APPS] || [];
     const apiKeys = await readApiKeys();
@@ -48,7 +49,7 @@ export const storage = {
     }));
   },
 
-  async saveArrApps(apps: ArrApp[]): Promise<void> {
+  async saveArrApps(apps: ArrAppWithKey[]): Promise<void> {
     const apiKeys = await readApiKeys();
     const nextKeys = { ...apiKeys };
 
@@ -63,7 +64,7 @@ export const storage = {
     await chrome.storage.sync.set({ [STORAGE_KEYS.ARR_APPS]: storedApps });
   },
 
-  async addArrApp(app: ArrApp): Promise<void> {
+  async addArrApp(app: ArrAppWithKey): Promise<void> {
     const apps = await this.getArrApps();
     apps.push(app);
     await this.saveArrApps(apps);
@@ -81,12 +82,25 @@ export const storage = {
     }
   },
 
-  async updateArrApp(appId: string, updatedApp: Partial<ArrApp>): Promise<void> {
+  async updateArrApp(appId: string, updatedApp: Partial<ArrAppWithKey>): Promise<void> {
     const apps = await this.getArrApps();
     const index = apps.findIndex(app => app.id === appId);
     if (index !== -1) {
       apps[index] = { ...apps[index], ...updatedApp };
       await this.saveArrApps(apps);
+    }
+  },
+
+  async getSelectedAppId(): Promise<string | null> {
+    const result = await chrome.storage.local.get([STORAGE_KEYS.SELECTED_APP_ID]);
+    return result[STORAGE_KEYS.SELECTED_APP_ID] || null;
+  },
+
+  async setSelectedAppId(appId: string | null): Promise<void> {
+    if (appId) {
+      await chrome.storage.local.set({ [STORAGE_KEYS.SELECTED_APP_ID]: appId });
+    } else {
+      await chrome.storage.local.remove([STORAGE_KEYS.SELECTED_APP_ID]);
     }
   },
 
