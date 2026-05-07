@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import type { SearchResult } from '../api/types';
 import { AddIcon, CheckIcon } from '../utils/icons';
+import { PLACEHOLDER_POSTER } from '../utils/constants';
 
 interface ResultCardProps {
   result: SearchResult;
@@ -29,7 +30,7 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, isAdded, onClick, showC
     }
     
     // Default placeholder
-    return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iOTAiIHZpZXdCb3g9IjAgMCA2MCA5MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjkwIiBmaWxsPSIjZjNmNGY2Ii8+CjxwYXRoIGQ9Ik0yMCA0NUwyNSAzNUwzNSA0NUw0MCAzNUw0NSA0NUw0MCA1NUwzNSA0NUwyNSA1NUwyMCA0NVoiIGZpbGw9IiNkMWQ1ZGIiLz4KPC9zdmc+';
+    return PLACEHOLDER_POSTER;
   };
   
   const posterUrl = getPosterUrl();
@@ -55,7 +56,7 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, isAdded, onClick, showC
       img.src = result.remotePoster;
     } else {
       // Use the default placeholder
-      img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iOTAiIHZpZXdCb3g9IjAgMCA2MCA5MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjkwIiBmaWxsPSIjZjNmNGY2Ii8+CjxwYXRoIGQ9Ik0yMCA0NUwyNSAzNUwzNSA0NUw0MCAzNUw0NSA0NUw0MCA1NUwzNSA0NUwyNSA1NUwyMCA0NVoiIGZpbGw9IiNkMWQ1ZGIiLz4KPC9zdmc+';
+      img.src = PLACEHOLDER_POSTER;
     }
     setImageLoaded(true);
   }, [result.remotePoster]);

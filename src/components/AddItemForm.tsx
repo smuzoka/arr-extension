@@ -269,6 +269,18 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ app, result, onSuccess, onCan
           </select>
         </div>
 
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <input
+            type="checkbox"
+            id="monitored"
+            checked={monitored}
+            onChange={(e) => setMonitored(e.target.checked)}
+          />
+          <label htmlFor="monitored" style={{ fontSize: '12px' }}>
+            Monitored
+          </label>
+        </div>
+
         {app.type === 'sonarr' && (
           <>
             <div className="form-group">
