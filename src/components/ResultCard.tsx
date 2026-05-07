@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import type { SearchResult } from '../api/types';
 import { AddIcon, CheckIcon } from '../utils/icons';
 
@@ -39,12 +39,52 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, isAdded, onClick, showC
   const validLanguage = language && typeof language === 'string' && language.trim() ? language.trim() : null;
   const [isExpanded, setIsExpanded] = useState(false);
   const [showToggle, setShowToggle] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const overviewRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
 
-  const handleToggleExpand = (e: React.MouseEvent) => {
+  const handleToggleExpand = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsExpanded(!isExpanded);
-  };
+    setIsExpanded(prev => !prev);
+  }, []);
+
+  const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    // If we're not already on the remotePoster and it exists, try it
+    if (img.src !== result.remotePoster && result.remotePoster) {
+      img.src = result.remotePoster;
+    } else {
+      // Use the default placeholder
+      img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iOTAiIHZpZXdCb3g9IjAgMCA2MCA5MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjkwIiBmaWxsPSIjZjNmNGY2Ii8+CjxwYXRoIGQ9Ik0yMCA0NUwyNSAzNUwzNSA0NUw0MCAzNUw0NSA0NUw0MCA1NUwzNSA0NUwyNSA1NUwyMCA0NVoiIGZpbGw9IiNkMWQ1ZGIiLz4KPC9zdmc+';
+    }
+    setImageLoaded(true);
+  }, [result.remotePoster]);
+
+  const handleImageLoad = useCallback(() => {
+    setImageLoaded(true);
+  }, []);
+
+  // Lazy load image using Intersection Observer
+  useEffect(() => {
+    const img = imageRef.current;
+    if (!img) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            // Image is visible, load it
+            img.src = posterUrl;
+            observer.unobserve(img);
+          }
+        });
+      },
+      { rootMargin: '50px' } // Start loading 50px before the image becomes visible
+    );
+
+    observer.observe(img);
+    return () => observer.disconnect();
+  }, [posterUrl]);
 
   // Check if overview text is truncated and needs a toggle
   useEffect(() => {
@@ -59,22 +99,11 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, isAdded, onClick, showC
   return (
     <div className="result-card" onClick={onClick}>
       <img 
-        src={posterUrl} 
+        ref={imageRef}
         alt={result.title}
         className="result-image"
-        onError={(e) => {
-          const img = e.currentTarget;
-          // If we're not already on the remotePoster and it exists, try it
-          if (img.src !== result.remotePoster && result.remotePoster) {
-            img.src = result.remotePoster;
-          } else {
-            // Use the default placeholder
-            img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iOTAiIHZpZXdCb3g9IjAgMCA2MCA5MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjkwIiBmaWxsPSIjZjNmNGY2Ii8+CjxwYXRoOiBkPSJNMjAgNDVMMjUgMzVMMzUgNDVMNDAgMzVMNDUgNDVMNDAgNTVMMzUgNDVMMjUgNTVMMjAgNDVaIiBmaWxsPSIjZDFkNWRiIi8+Cjwvc3ZnPg==';
-          }
-        }}
-        onLoad={() => {
-          // Poster loaded successfully
-        }}
+        onError={handleImageError}
+        onLoad={handleImageLoad}
       />
       
       <div className="result-details">
