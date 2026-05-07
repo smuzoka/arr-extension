@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { storage } from '../utils/storage';
 import { createArrApi } from '../api/arrApi';
 import type { ArrAppWithKey, SearchResult } from '../api/types';
@@ -62,38 +62,38 @@ const Popup: React.FC = () => {
     };
   }, [filteredResults]);
 
-  const handleResultClick = (result: SearchResult) => {
+  const handleResultClick = useCallback((result: SearchResult) => {
     setSelectedResult(result);
     setViewState('add');
-  };
+  }, []);
 
-  const handleAddSuccess = (result: SearchResult) => {
+  const handleAddSuccess = useCallback((result: SearchResult) => {
     setViewState('search');
     setSelectedResult(null);
-  };
+  }, []);
 
-  const handleBackToSearch = () => {
+  const handleBackToSearch = useCallback(() => {
     setViewState('search');
     setSelectedResult(null);
     setEditingApp(null);
     setShowAddAppForm(false);
-  };
+  }, []);
 
-  const handleSettingsClick = () => {
+  const handleSettingsClick = useCallback(() => {
     setViewState('settings');
-  };
+  }, []);
 
-  const handleAddApp = () => {
+  const handleAddApp = useCallback(() => {
     setEditingApp(null);
     setShowAddAppForm(true);
-  };
+  }, []);
 
-  const handleEditApp = (app: ArrAppWithKey) => {
+  const handleEditApp = useCallback((app: ArrAppWithKey) => {
     setEditingApp(app);
     setShowAddAppForm(true);
-  };
+  }, []);
 
-  const handleDeleteApp = async (appId: string) => {
+  const handleDeleteApp = useCallback(async (appId: string) => {
     if (!confirm('Are you sure you want to delete this app?')) {
       return;
     }
@@ -112,9 +112,9 @@ const Popup: React.FC = () => {
     } catch (error) {
       showMessage('error', 'Failed to delete app');
     }
-  };
+  }, [apps, selectedApp, saveApps, selectApp]);
 
-  const handleTestConnection = async (app: ArrAppWithKey) => {
+  const handleTestConnection = useCallback(async (app: ArrAppWithKey) => {
     try {
       const api = createArrApi(app);
       await api.testConnection();
@@ -122,9 +122,9 @@ const Popup: React.FC = () => {
     } catch (error) {
       showMessage('error', `Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  };
+  }, []);
 
-  const handleAppFormSubmit = async (appData: Omit<ArrAppWithKey, 'id'>) => {
+  const handleAppFormSubmit = useCallback(async (appData: Omit<ArrAppWithKey, 'id'>) => {
     try {
       if (editingApp) {
         // Update existing app
@@ -162,17 +162,17 @@ const Popup: React.FC = () => {
     } catch (error) {
       showMessage('error', 'Failed to save app');
     }
-  };
+  }, [editingApp, apps, selectedApp, saveApps, selectApp]);
 
-  const handleAppFormCancel = () => {
+  const handleAppFormCancel = useCallback(() => {
     setShowAddAppForm(false);
     setEditingApp(null);
-  };
+  }, []);
 
-  const showMessage = (type: 'success' | 'error', text: string) => {
+  const showMessage = useCallback((type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
     setTimeout(() => setMessage(null), 5000);
-  };
+  }, []);
 
   return (
     <div className="popup-container">

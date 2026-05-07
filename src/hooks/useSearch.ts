@@ -18,12 +18,20 @@ export const useSearch = (app: ArrAppWithKey | null) => {
 
   const searchIdRef = useRef(0);
   const debounceRef = useRef<number | undefined>(undefined);
+  const cacheRef = useRef<Map<string, SearchResult[]>>(new Map());
 
   useEffect(() => {
     if (!app || !query.trim()) {
       setResults([]);
       setLoading(false);
       return;
+    }
+
+    const cacheKey = `${app.id}:${query.trim().toLowerCase()}`;
+    const cached = cacheRef.current.get(cacheKey);
+
+    if (cached) {
+      setResults(cached);
     }
 
     window.clearTimeout(debounceRef.current);
@@ -40,6 +48,7 @@ export const useSearch = (app: ArrAppWithKey | null) => {
           : await api.searchMovies(query);
 
         if (currentSearchId === searchIdRef.current) {
+          cacheRef.current.set(cacheKey, nextResults);
           setResults(nextResults);
         }
       } catch (err) {
