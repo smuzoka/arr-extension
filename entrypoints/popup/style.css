@@ -860,4 +860,42 @@ body::-webkit-scrollbar-thumb {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 16px;
-} 
+}
+
+/* Dialog Styles */
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in oklch, var(--background) 80%, black 20%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.dialog-card {
+  background: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  width: 320px;
+  box-shadow: 0 8px 24px color-mix(in oklch, black 30%, transparent);
+}
+
+.dialog-title {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.dialog-message {
+  margin: 0 0 16px;
+  font-size: 13px;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

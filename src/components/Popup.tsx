@@ -9,6 +9,7 @@ import ResultCard from './ResultCard';
 import AddItemForm from './AddItemForm';
 import AppForm from './AppForm';
 import SearchFiltersComponent, { type SearchFilterOptions } from './SearchFilters';
+import ConfirmDialog from './ConfirmDialog';
 import { getAppIcon, SettingsIcon, CloseIcon, MoonIcon, SunIcon } from '../utils/icons';
 
 type ViewState = 'search' | 'add' | 'settings';
@@ -24,6 +25,11 @@ const Popup: React.FC = () => {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [editingApp, setEditingApp] = useState<ArrAppWithKey | null>(null);
   const [showAddAppForm, setShowAddAppForm] = useState(false);
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => Promise<void> | void;
+  } | null>(null);
 
   const filterOptions = useMemo<SearchFilterOptions>(() => {
     const years = new Set<number>();
@@ -62,6 +68,24 @@ const Popup: React.FC = () => {
     };
   }, [filteredResults]);
 
+  // Helper functions (must be defined before handlers that use them)
+  const showMessage = useCallback((type: 'success' | 'error', text: string) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage(null), 5000);
+  }, []);
+
+  const openConfirm = useCallback((title: string, message: string, onConfirm: () => Promise<void> | void) => {
+    setConfirmState({ title, message, onConfirm });
+  }, []);
+
+  const handleConfirm = useCallback(async () => {
+    if (!confirmState) return;
+    await confirmState.onConfirm();
+    setConfirmState(null);
+  }, [confirmState]);
+
+  const handleCancelConfirm = useCallback(() => setConfirmState(null), []);
+
   const handleResultClick = useCallback((result: SearchResult) => {
     setSelectedResult(result);
     setViewState('add');
@@ -93,26 +117,24 @@ const Popup: React.FC = () => {
     setShowAddAppForm(true);
   }, []);
 
-  const handleDeleteApp = useCallback(async (appId: string) => {
-    if (!confirm('Are you sure you want to delete this app?')) {
-      return;
-    }
-
-    try {
-      await storage.removeArrApp(appId);
-      const updatedApps = apps.filter(app => app.id !== appId);
-      await saveApps(updatedApps);
-      
-      // If we deleted the selected app, select the first remaining app
-      if (selectedApp?.id === appId && updatedApps.length > 0) {
-        await selectApp(updatedApps[0]);
+  const handleDeleteApp = useCallback((appId: string) => {
+    openConfirm('Delete app', 'Are you sure you want to delete this app?', async () => {
+      try {
+        await storage.removeArrApp(appId);
+        const updatedApps = apps.filter(app => app.id !== appId);
+        await saveApps(updatedApps);
+        
+        // If we deleted the selected app, select the first remaining app
+        if (selectedApp?.id === appId && updatedApps.length > 0) {
+          await selectApp(updatedApps[0]);
+        }
+        
+        showMessage('success', 'App deleted successfully');
+      } catch (error) {
+        showMessage('error', 'Failed to delete app');
       }
-      
-      showMessage('success', 'App deleted successfully');
-    } catch (error) {
-      showMessage('error', 'Failed to delete app');
-    }
-  }, [apps, selectedApp, saveApps, selectApp]);
+    });
+  }, [openConfirm, apps, selectedApp, saveApps, selectApp, showMessage]);
 
   const handleTestConnection = useCallback(async (app: ArrAppWithKey) => {
     try {
@@ -167,11 +189,6 @@ const Popup: React.FC = () => {
   const handleAppFormCancel = useCallback(() => {
     setShowAddAppForm(false);
     setEditingApp(null);
-  }, []);
-
-  const showMessage = useCallback((type: 'success' | 'error', text: string) => {
-    setMessage({ type, text });
-    setTimeout(() => setMessage(null), 5000);
   }, []);
 
   return (
@@ -398,6 +415,14 @@ const Popup: React.FC = () => {
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(confirmState)}
+        title={confirmState?.title ?? ''}
+        message={confirmState?.message ?? ''}
+        onConfirm={handleConfirm}
+        onCancel={handleCancelConfirm}
+      />
     </div>
   );
 };
