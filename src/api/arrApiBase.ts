@@ -10,15 +10,14 @@ export abstract class ArrApiBase {
 
   protected async request(endpoint: string, options: RequestInit = {}) {
     const url = `${this.app.url}/api/v3${endpoint}`;
-    const appContext = `${this.app.type}:${this.app.name}`;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      this.REQUEST_TIMEOUT,
+    );
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(
-        () => controller.abort(),
-        this.REQUEST_TIMEOUT,
-      );
-
       const response = await fetch(url, {
         ...options,
         signal: controller.signal,
@@ -29,36 +28,29 @@ export abstract class ArrApiBase {
         },
       });
 
-      clearTimeout(timeoutId);
+      if (response.status === 401) {
+        throw new Error('Invalid API key.');
+      }
 
       if (!response.ok) {
-        throw new Error(
-          `${appContext} API error (${response.status}): ${response.statusText}`,
-        );
+        throw new Error('Unable to connect. Check your URL.');
       }
 
       try {
         return await response.json();
-      } catch (err) {
-        throw new Error(
-          `${appContext} returned invalid response (${response.status}): Unable to parse JSON`,
-        );
+      } catch {
+        throw new Error(`${this.app.type} returned invalid JSON.`);
       }
     } catch (err) {
       if (err instanceof TypeError) {
-        // Network error or fetch failure
-        throw new Error(
-          `${appContext} connection failed: Network error. Check server URL and permissions.`,
-        );
+        throw new Error('Unable to connect. Check your URL.');
       }
       if (err instanceof DOMException && err.name === "AbortError") {
-        // Request timeout
-        throw new Error(
-          `${appContext} request timeout: Connection took longer than ${this.REQUEST_TIMEOUT / 1000} seconds`,
-        );
+        throw new Error('Server timed out.');
       }
-      // Re-throw our custom errors or other errors
       throw err;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
