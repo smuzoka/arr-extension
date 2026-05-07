@@ -1,13 +1,18 @@
+export type ArrAppType = 'sonarr' | 'radarr';
+
 export interface ArrApp {
   id: string;
   name: string;
-  type: "sonarr" | "radarr";
+  type: ArrAppType;
   url: string;
-  apiKey: string;
   icon: string;
 }
 
-export interface SearchResult {
+export interface ArrAppWithKey extends ArrApp {
+  apiKey: string;
+}
+
+type SearchResultBase = {
   id: number;
   title: string;
   year?: number;
@@ -34,15 +39,22 @@ export interface SearchResult {
     id: number;
     name: string;
   };
-  // Sonarr specific
-  tvdbId?: number;
-  seriesType?: string;
-  // Radarr specific
-  tmdbId?: number;
-  imdbId?: string;
-  // Common
   remotePoster?: string;
-}
+};
+
+export type SeriesResult = SearchResultBase & {
+  kind: 'series';
+  tvdbId: number;
+  seriesType?: string;
+};
+
+export type MovieResult = SearchResultBase & {
+  kind: 'movie';
+  tmdbId: number;
+  imdbId?: string;
+};
+
+export type SearchResult = SeriesResult | MovieResult;
 
 export type SearchFilters = {
   year?: number | null;

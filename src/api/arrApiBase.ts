@@ -1,10 +1,10 @@
-import type { ArrApp, QualityProfile, RootFolder, SystemStatus } from "./types";
+import type { ArrAppWithKey, QualityProfile, RootFolder, SystemStatus } from "./types";
 
 export abstract class ArrApiBase {
-  protected app: ArrApp;
+  protected app: ArrAppWithKey;
   private readonly REQUEST_TIMEOUT = 5000; // 5 seconds
 
-  constructor(app: ArrApp) {
+  constructor(app: ArrAppWithKey) {
     this.app = app;
   }
 
