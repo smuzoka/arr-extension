@@ -21,6 +21,7 @@ const AppSwitcher: React.FC<AppSwitcherProps> = ({ apps, selectedApp, onAppSelec
           className={`app-icon ${selectedApp?.id === app.id ? 'active' : ''}`}
           onClick={() => onAppSelect(app)}
           title={app.name}
+          aria-label={`Switch to ${app.name}`}
         >
           {getAppIcon(app.type)}
         </button>

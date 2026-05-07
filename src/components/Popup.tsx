@@ -185,6 +185,7 @@ const Popup: React.FC = () => {
               className="back-btn"
               onClick={handleBackToSearch}
               title={viewState === 'add' ? 'Back to search results' : 'Back to search'}
+              aria-label={viewState === 'add' ? 'Back to search results' : 'Back to search'}
             >
               <CloseIcon />
             </button>
@@ -193,6 +194,7 @@ const Popup: React.FC = () => {
             className="theme-toggle-btn"
             onClick={toggleTheme}
             title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
           >
             {theme === 'light' ? <MoonIcon /> : <SunIcon />}
           </button>
@@ -201,6 +203,7 @@ const Popup: React.FC = () => {
               className="settings-btn"
               onClick={handleSettingsClick}
               title="Settings"
+              aria-label="Open settings"
             >
               <SettingsIcon />
             </button>

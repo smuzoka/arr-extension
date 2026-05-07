@@ -165,6 +165,7 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, isAdded, onClick, showC
           ) : (
             <button 
               className="add-button"
+              aria-label={`Add ${result.title}`}
               onClick={(e) => {
                 e.stopPropagation();
                 onClick();

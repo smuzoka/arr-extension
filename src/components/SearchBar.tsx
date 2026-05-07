@@ -22,7 +22,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, placeholder }) =
     setLocalValue(e.target.value);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       onChange(localValue);
     }
@@ -35,9 +35,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, placeholder }) =
         className="search-input"
         value={localValue}
         onChange={handleChange}
-        onKeyPress={handleKeyPress}
+        onKeyDown={handleKeyDown}
         placeholder={placeholder}
         autoFocus
+        aria-label="Search for items"
       />
     </form>
   );
