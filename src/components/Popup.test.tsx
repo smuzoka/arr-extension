@@ -27,9 +27,18 @@ vi.mock('../utils/storage', () => ({
   storage: {
     getArrApps,
     getSelectedText,
+    getSelectedAppId: vi.fn(async () => null),
+    setSelectedAppId: vi.fn(async () => {}),
+    migrateApiKeys: vi.fn(async () => {}),
     addArrApp: vi.fn(),
     updateArrApp: vi.fn(),
-    removeArrApp: vi.fn()
+    removeArrApp: vi.fn(),
+    saveArrApps: vi.fn(),
+    clearSelectedText: vi.fn(),
+    saveLastUsedOptions: vi.fn(),
+    getLastUsedOptions: vi.fn(),
+    saveArrMetadata: vi.fn(),
+    getArrMetadata: vi.fn()
   }
 }));
 

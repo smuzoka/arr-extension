@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { storage } from '../utils/storage';
 import { createArrApi } from '../api/arrApi';
-import type { ArrApp, SearchFilters, SearchResult } from '../api/types';
+import type { ArrAppWithKey, SearchResult } from '../api/types';
+import { useSelectedApp, useSearch, useExistingItems, useTheme } from '../hooks';
 import SearchBar from './SearchBar';
 import AppSwitcher from './AppSwitcher';
 import ResultCard from './ResultCard';
@@ -13,216 +14,16 @@ import { getAppIcon, SettingsIcon, CloseIcon, MoonIcon, SunIcon } from '../utils
 type ViewState = 'search' | 'add' | 'settings';
 
 const Popup: React.FC = () => {
-  const [apps, setApps] = useState<ArrApp[]>([]);
-  const [selectedApp, setSelectedApp] = useState<ArrApp | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [filters, setFilters] = useState<SearchFilters>({
-    year: null,
-    genres: [],
-    network: null,
-    language: null
-  });
-  const [addedItems, setAddedItems] = useState<Set<number>>(new Set());
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { apps, selectedApp, selectApp, saveApps } = useSelectedApp();
+  const { query, setQuery, results: filteredResults, allResults, filters, setFilters, loading, error, resetFilters } = useSearch(selectedApp);
+  const { addedItems } = useExistingItems(selectedApp);
+  const { theme, toggleTheme } = useTheme();
+
   const [viewState, setViewState] = useState<ViewState>('search');
   const [selectedResult, setSelectedResult] = useState<SearchResult | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [editingApp, setEditingApp] = useState<ArrApp | null>(null);
+  const [editingApp, setEditingApp] = useState<ArrAppWithKey | null>(null);
   const [showAddAppForm, setShowAddAppForm] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      return savedTheme as 'light' | 'dark';
-    } else {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-  });
-
-  // Track the latest search to prevent outdated results from overriding newer searches
-  const searchIdRef = useRef(0);
-
-  useEffect(() => {
-    document.body.classList.toggle('dark-mode', theme === 'dark');
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const resetFilters = () => {
-    setFilters({
-      year: null,
-      genres: [],
-      network: null,
-      language: null
-    });
-  };
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const initializePopup = async () => {
-      try {
-        await storage.migrateApiKeys();
-        const savedApps = await storage.getArrApps();
-        if (!isMounted) return;
-
-        setApps(savedApps);
-        const initialApp = savedApps[0] ?? null;
-        setSelectedApp(initialApp);
-
-        if (initialApp) {
-          await loadExistingItems(initialApp);
-        }
-
-        const text = await storage.getSelectedText();
-        if (!isMounted) return;
-
-        if (text) {
-          setSearchTerm(text);
-        }
-      } catch (err) {
-        setError('Failed to load configured apps');
-      }
-    };
-
-    initializePopup();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (selectedApp && searchTerm) {
-      performSearch(searchTerm, selectedApp);
-    }
-  }, [searchTerm, selectedApp]);
-
-    const loadExistingItems = async (app: ArrApp) => {
-    try {
-      let existingItems: SearchResult[] = [];
-
-      if (app.type === 'sonarr') {
-        const api = createArrApi(app);
-        existingItems = await api.getAllSeries();
-      } else if (app.type === 'radarr') {
-        const api = createArrApi(app);
-        existingItems = await api.getAllMovies();
-      }
-      
-      // Use external identifiers instead of internal IDs
-      const existingIds = new Set(existingItems.map(item => {
-        if (app.type === 'sonarr') {
-          return item.tvdbId;
-        } else if (app.type === 'radarr') {
-          return item.tmdbId;
-        }
-        return item.id;
-      }).filter((id): id is number => id !== undefined));
-      setAddedItems(existingIds);
-    } catch (err) {
-      console.error('Failed to load existing items:', err);
-    }
-  };
-
-    const performSearch = async (term: string, app: ArrApp) => {
-    if (!term.trim()) return;
-
-    const currentSearchId = ++searchIdRef.current;
-    resetFilters();
-    setLoading(true);
-    setError(null);
-
-    try {
-      let results: SearchResult[] = [];
-
-      if (app.type === 'sonarr') {
-        const api = createArrApi(app);
-        results = await api.searchSeries(term);
-      } else if (app.type === 'radarr') {
-        const api = createArrApi(app);
-        results = await api.searchMovies(term);
-      }
-
-      if (currentSearchId === searchIdRef.current) {
-        setSearchResults(results);
-      }
-    } catch (err) {
-      if (currentSearchId === searchIdRef.current) {
-        setError(err instanceof Error ? err.message : 'Search failed');
-      }
-    } finally {
-      if (currentSearchId === searchIdRef.current) {
-        setLoading(false);
-      }
-    }
-  };
-
-  const handleAppChange = async (app: ArrApp) => {
-    setSelectedApp(app);
-    resetFilters();
-    await loadExistingItems(app);
-    if (searchTerm) {
-      await performSearch(searchTerm, app);
-    }
-  };
-
-  const handleSearch = (term: string) => {
-    setSearchTerm(term);
-  };
-
-  const filteredResults = useMemo(() => {
-    if (searchResults.length === 0) return [];
-
-    const hasActiveFilters = Boolean(
-      filters.year ||
-      filters.network ||
-      filters.language ||
-      (filters.genres && filters.genres.length > 0)
-    );
-
-    if (!hasActiveFilters) return searchResults;
-
-    const yearFilter = filters.year ?? null;
-    const networkFilter = filters.network?.trim().toLowerCase();
-    const languageFilter = filters.language?.trim().toLowerCase();
-    const selectedGenres = (filters.genres ?? [])
-      .map(genre => genre.trim().toLowerCase())
-      .filter(Boolean);
-
-    return searchResults.filter(result => {
-      if (yearFilter && result.year !== yearFilter) {
-        return false;
-      }
-
-      if (networkFilter) {
-        const network = result.network?.trim().toLowerCase();
-        if (!network || network !== networkFilter) {
-          return false;
-        }
-      }
-
-      if (languageFilter) {
-        const language = (result.language ?? result.originalLanguage?.name)
-          ?.trim()
-          .toLowerCase();
-        if (!language || language !== languageFilter) {
-          return false;
-        }
-      }
-
-      if (selectedGenres.length > 0) {
-        const resultGenres = (result.genres ?? [])
-          .map(genre => genre.trim().toLowerCase())
-          .filter(Boolean);
-        const matchesGenre = selectedGenres.some(genre => resultGenres.includes(genre));
-        if (!matchesGenre) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [filters, searchResults]);
 
   const filterOptions = useMemo<SearchFilterOptions>(() => {
     const years = new Set<number>();
@@ -267,17 +68,6 @@ const Popup: React.FC = () => {
   };
 
   const handleAddSuccess = (result: SearchResult) => {
-    // Use external identifier for tracking
-    let externalId: number | undefined;
-    if (selectedApp?.type === 'sonarr') {
-      externalId = result.tvdbId;
-    } else if (selectedApp?.type === 'radarr') {
-      externalId = result.tmdbId;
-    }
-    
-    if (externalId) {
-      setAddedItems(prev => new Set([...prev, externalId]));
-    }
     setViewState('search');
     setSelectedResult(null);
   };
@@ -293,16 +83,12 @@ const Popup: React.FC = () => {
     setViewState('settings');
   };
 
-  const handleThemeToggle = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
-
   const handleAddApp = () => {
     setEditingApp(null);
     setShowAddAppForm(true);
   };
 
-  const handleEditApp = (app: ArrApp) => {
+  const handleEditApp = (app: ArrAppWithKey) => {
     setEditingApp(app);
     setShowAddAppForm(true);
   };
@@ -315,15 +101,11 @@ const Popup: React.FC = () => {
     try {
       await storage.removeArrApp(appId);
       const updatedApps = apps.filter(app => app.id !== appId);
-      setApps(updatedApps);
+      await saveApps(updatedApps);
       
       // If we deleted the selected app, select the first remaining app
-      if (selectedApp?.id === appId) {
-        const newSelectedApp = updatedApps.length > 0 ? updatedApps[0] : null;
-        setSelectedApp(newSelectedApp);
-        if (newSelectedApp) {
-          await loadExistingItems(newSelectedApp);
-        }
+      if (selectedApp?.id === appId && updatedApps.length > 0) {
+        await selectApp(updatedApps[0]);
       }
       
       showMessage('success', 'App deleted successfully');
@@ -332,7 +114,7 @@ const Popup: React.FC = () => {
     }
   };
 
-  const handleTestConnection = async (app: ArrApp) => {
+  const handleTestConnection = async (app: ArrAppWithKey) => {
     try {
       const api = createArrApi(app);
       await api.testConnection();
@@ -342,36 +124,34 @@ const Popup: React.FC = () => {
     }
   };
 
-  const handleAppFormSubmit = async (appData: Omit<ArrApp, 'id'>) => {
+  const handleAppFormSubmit = async (appData: Omit<ArrAppWithKey, 'id'>) => {
     try {
       if (editingApp) {
         // Update existing app
         const updatedApp = { ...appData, id: editingApp.id };
         await storage.updateArrApp(editingApp.id, appData);
         const updatedApps = apps.map(app => app.id === editingApp.id ? updatedApp : app);
-        setApps(updatedApps);
+        await saveApps(updatedApps);
         
         // Update selected app if it was the one being edited
         if (selectedApp?.id === editingApp.id) {
-          setSelectedApp(updatedApp);
-          await loadExistingItems(updatedApp);
+          await selectApp(updatedApp);
         }
         
         showMessage('success', 'App updated successfully');
       } else {
         // Add new app
-        const newApp: ArrApp = {
+        const newApp: ArrAppWithKey = {
           ...appData,
           id: Date.now().toString()
         };
         await storage.addArrApp(newApp);
         const updatedApps = [...apps, newApp];
-        setApps(updatedApps);
+        await saveApps(updatedApps);
         
         // If this is the first app, select it
         if (apps.length === 0) {
-          setSelectedApp(newApp);
-          await loadExistingItems(newApp);
+          await selectApp(newApp);
         }
         
         showMessage('success', 'App added successfully');
@@ -411,7 +191,7 @@ const Popup: React.FC = () => {
           )}
           <button 
             className="theme-toggle-btn"
-            onClick={handleThemeToggle}
+            onClick={toggleTheme}
             title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
           >
             {theme === 'light' ? <MoonIcon /> : <SunIcon />}
@@ -443,23 +223,23 @@ const Popup: React.FC = () => {
             <AppSwitcher
               apps={apps}
               selectedApp={selectedApp}
-              onAppSelect={handleAppChange}
+              onAppSelect={selectApp}
             />
           )}
 
           {/* Search Bar */}
           <SearchBar
-            value={searchTerm}
-            onChange={handleSearch}
+            value={query}
+            onChange={setQuery}
             placeholder={selectedApp ? `Search ${selectedApp.name}...` : 'Select an app first'}
           />
 
-          {searchResults.length > 0 && (
+          {allResults.length > 0 && (
             <SearchFiltersComponent
               filters={filters}
               options={filterOptions}
               onChange={setFilters}
-              totalCount={searchResults.length}
+              totalCount={allResults.length}
               filteredCount={filteredResults.length}
             />
           )}
@@ -496,14 +276,14 @@ const Popup: React.FC = () => {
           )}
 
           {/* Search Results */}
-          {searchResults.length > 0 && (
+          {allResults.length > 0 && (
             <div className="search-results">
               {filteredResults.map((result) => {
                 // Check if item is added using external identifier
                 let externalId: number | undefined;
-                if (selectedApp?.type === 'sonarr') {
+                if (selectedApp?.type === 'sonarr' && result.kind === 'series') {
                   externalId = result.tvdbId;
-                } else if (selectedApp?.type === 'radarr') {
+                } else if (selectedApp?.type === 'radarr' && result.kind === 'movie') {
                   externalId = result.tmdbId;
                 }
                 const isAdded = externalId ? addedItems.has(externalId) : false;
@@ -521,9 +301,9 @@ const Popup: React.FC = () => {
           )}
 
           {/* No Results Message */}
-          {!loading && searchTerm && searchResults.length === 0 && selectedApp && (
+          {!loading && query && allResults.length === 0 && selectedApp && (
             <div className="no-results-message">
-              No results found for "{searchTerm}"
+              No results found for "{query}"
             </div>
           )}
         </>
