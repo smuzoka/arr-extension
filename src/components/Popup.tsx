@@ -62,6 +62,7 @@ const Popup: React.FC = () => {
 
     const initializePopup = async () => {
       try {
+        await storage.migrateApiKeys();
         const savedApps = await storage.getArrApps();
         if (!isMounted) return;
 

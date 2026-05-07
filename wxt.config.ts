@@ -1,17 +1,17 @@
 import { defineConfig } from 'wxt';
+import pkg from './package.json';
 
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   manifest: {
     name: 'ArrExtension',
     description: 'Search and add media to your *arr applications.',
-    version: '1.0.0',
+    version: pkg.version,
     permissions: [
       'storage',
-      'contextMenus',
-      'activeTab'
+      'contextMenus'
     ],
-    host_permissions: [
+    optional_host_permissions: [
       '*://*/*'
     ],
     action: {
@@ -25,4 +25,4 @@ export default defineConfig({
       128: 'arr128x128.png'
     }
   }
-}); 
+});
