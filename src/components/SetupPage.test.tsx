@@ -1,12 +1,10 @@
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("SetupPage entrypoint styles", () => {
   it("includes full-width layout rules", () => {
-    const cssPath = fileURLToPath(
-      new URL("../../entrypoints/setup/style.css", import.meta.url),
-    );
+    const cssPath = resolve(process.cwd(), "entrypoints/setup/style.css");
     const css = readFileSync(cssPath, "utf8");
 
     expect(css).toMatch(/body\s*\{[^}]*min-height:\s*100vh;/s);
