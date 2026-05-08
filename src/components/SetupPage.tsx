@@ -86,7 +86,7 @@ const SetupPage: React.FC = () => {
           message: 'Permission denied for this server origin.',
         };
       }
-
+      await refreshApps();
       try {
         const api = createArrApi({ ...app, id: 'test' });
         const status = await api.testConnection();
@@ -101,7 +101,7 @@ const SetupPage: React.FC = () => {
         };
       }
     },
-    [],
+    [refreshApps],
   );
 
   return (
@@ -119,8 +119,6 @@ const SetupPage: React.FC = () => {
           Done
         </button>
       </header>
-
-      {message && <div className={`message ${message.type}`}>{message.text}</div>}
 
       <AppSettingsPanel
         apps={apps}
@@ -143,9 +141,14 @@ const SetupPage: React.FC = () => {
         onDelete={async (appId) => {
           await storage.removeArrApp(appId);
           await refreshApps();
+          if (editingApp?.id === appId) {
+            setEditingApp(null);
+            setShowForm(false);
+          }
         }}
         onGrantPermission={handleGrantPermission}
         permissionByAppId={permissionByAppId}
+        message={message}
       />
     </div>
   );
