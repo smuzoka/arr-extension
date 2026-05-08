@@ -78,6 +78,7 @@ jspm_packages/
 # Temporary folders
 tmp/
 temp/
+.worktrees/
 
 # Editor directories and files
 .cursor/
