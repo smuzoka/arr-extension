@@ -40,7 +40,6 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, isAdded, onClick, showC
   const validLanguage = language && typeof language === 'string' && language.trim() ? language.trim() : null;
   const [isExpanded, setIsExpanded] = useState(false);
   const [showToggle, setShowToggle] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
   const overviewRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
@@ -58,12 +57,7 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, isAdded, onClick, showC
       // Use the default placeholder
       img.src = PLACEHOLDER_POSTER;
     }
-    setImageLoaded(true);
   }, [result.remotePoster]);
-
-  const handleImageLoad = useCallback(() => {
-    setImageLoaded(true);
-  }, []);
 
   // Lazy load image using Intersection Observer
   useEffect(() => {
@@ -104,7 +98,6 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, isAdded, onClick, showC
         alt={result.title}
         className="result-image"
         onError={handleImageError}
-        onLoad={handleImageLoad}
       />
       
       <div className="result-details">

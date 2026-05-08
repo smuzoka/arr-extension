@@ -1,4 +1,10 @@
-import type { ArrApp, ArrAppWithKey, QualityProfile, RootFolder, SearchResult } from '../api/types';
+import type {
+  ArrApp,
+  ArrAppWithKey,
+  QualityProfile,
+  RootFolder,
+  SearchResult,
+} from "../api/types";
 
 // Interface for saved form options
 export interface SavedFormOptions {
@@ -12,16 +18,16 @@ export interface SavedFormOptions {
 }
 
 const STORAGE_KEYS = {
-  ARR_APPS: 'arr_apps',
-  ARR_API_KEYS: 'arr_api_keys',
-  SELECTED_TEXT: 'selected_text',
-  SELECTED_APP_ID: 'selected_app_id',
-  LAST_USED_OPTIONS: 'last_used_options',
-  ARR_METADATA: 'arr_metadata',
-  ARR_EXISTING_ITEMS: 'arr_existing_items',
+  ARR_APPS: "arr_apps",
+  ARR_API_KEYS: "arr_api_keys",
+  SELECTED_TEXT: "selected_text",
+  SELECTED_APP_ID: "selected_app_id",
+  LAST_USED_OPTIONS: "last_used_options",
+  ARR_METADATA: "arr_metadata",
+  ARR_EXISTING_ITEMS: "arr_existing_items",
 } as const;
 
-type StoredArrApp = Omit<ArrApp, 'apiKey'>;
+type StoredArrApp = Omit<ArrApp, "apiKey">;
 
 export interface CachedArrMetadata {
   qualityProfiles: QualityProfile[];
@@ -49,9 +55,9 @@ export const storage = {
     const storedApps: StoredArrApp[] = result[STORAGE_KEYS.ARR_APPS] || [];
     const apiKeys = await readApiKeys();
 
-    return storedApps.map(app => ({
+    return storedApps.map((app) => ({
       ...app,
-      apiKey: apiKeys[app.id] || ''
+      apiKey: apiKeys[app.id] || "",
     }));
   },
 
@@ -59,13 +65,15 @@ export const storage = {
     const apiKeys = await readApiKeys();
     const nextKeys = { ...apiKeys };
 
-    apps.forEach(app => {
+    apps.forEach((app) => {
       if (app.apiKey) {
         nextKeys[app.id] = app.apiKey;
       }
     });
 
-    const storedApps: StoredArrApp[] = apps.map(({ apiKey, ...rest }) => rest);
+    const storedApps: StoredArrApp[] = apps.map(
+      ({ apiKey: _apiKey, ...rest }) => rest,
+    );
     await writeApiKeys(nextKeys);
     await chrome.storage.sync.set({ [STORAGE_KEYS.ARR_APPS]: storedApps });
   },
@@ -78,7 +86,7 @@ export const storage = {
 
   async removeArrApp(appId: string): Promise<void> {
     const apps = await this.getArrApps();
-    const filteredApps = apps.filter(app => app.id !== appId);
+    const filteredApps = apps.filter((app) => app.id !== appId);
     await this.saveArrApps(filteredApps);
 
     const apiKeys = await readApiKeys();
@@ -88,9 +96,12 @@ export const storage = {
     }
   },
 
-  async updateArrApp(appId: string, updatedApp: Partial<ArrAppWithKey>): Promise<void> {
+  async updateArrApp(
+    appId: string,
+    updatedApp: Partial<ArrAppWithKey>,
+  ): Promise<void> {
     const apps = await this.getArrApps();
-    const index = apps.findIndex(app => app.id === appId);
+    const index = apps.findIndex((app) => app.id === appId);
     if (index !== -1) {
       apps[index] = { ...apps[index], ...updatedApp };
       await this.saveArrApps(apps);
@@ -98,7 +109,9 @@ export const storage = {
   },
 
   async getSelectedAppId(): Promise<string | null> {
-    const result = await chrome.storage.local.get([STORAGE_KEYS.SELECTED_APP_ID]);
+    const result = await chrome.storage.local.get([
+      STORAGE_KEYS.SELECTED_APP_ID,
+    ]);
     return result[STORAGE_KEYS.SELECTED_APP_ID] || null;
   },
 
@@ -123,24 +136,38 @@ export const storage = {
     await chrome.storage.local.remove([STORAGE_KEYS.SELECTED_TEXT]);
   },
 
-  async saveLastUsedOptions(appType: string, options: SavedFormOptions): Promise<void> {
-    const result = await chrome.storage.local.get([STORAGE_KEYS.LAST_USED_OPTIONS]);
+  async saveLastUsedOptions(
+    appType: string,
+    options: SavedFormOptions,
+  ): Promise<void> {
+    const result = await chrome.storage.local.get([
+      STORAGE_KEYS.LAST_USED_OPTIONS,
+    ]);
     const allOptions = result[STORAGE_KEYS.LAST_USED_OPTIONS] || {};
     allOptions[appType] = options;
-    await chrome.storage.local.set({ [STORAGE_KEYS.LAST_USED_OPTIONS]: allOptions });
+    await chrome.storage.local.set({
+      [STORAGE_KEYS.LAST_USED_OPTIONS]: allOptions,
+    });
   },
 
   async getLastUsedOptions(appType: string): Promise<SavedFormOptions | null> {
-    const result = await chrome.storage.local.get([STORAGE_KEYS.LAST_USED_OPTIONS]);
+    const result = await chrome.storage.local.get([
+      STORAGE_KEYS.LAST_USED_OPTIONS,
+    ]);
     const allOptions = result[STORAGE_KEYS.LAST_USED_OPTIONS] || {};
     return allOptions[appType] || null;
   },
 
-  async saveArrMetadata(appId: string, metadata: CachedArrMetadata): Promise<void> {
+  async saveArrMetadata(
+    appId: string,
+    metadata: CachedArrMetadata,
+  ): Promise<void> {
     const result = await chrome.storage.local.get([STORAGE_KEYS.ARR_METADATA]);
     const allMetadata = result[STORAGE_KEYS.ARR_METADATA] || {};
     allMetadata[appId] = metadata;
-    await chrome.storage.local.set({ [STORAGE_KEYS.ARR_METADATA]: allMetadata });
+    await chrome.storage.local.set({
+      [STORAGE_KEYS.ARR_METADATA]: allMetadata,
+    });
   },
 
   async getArrMetadata(appId: string): Promise<CachedArrMetadata | null> {
@@ -153,17 +180,19 @@ export const storage = {
     const result = await chrome.storage.sync.get([STORAGE_KEYS.ARR_APPS]);
     const legacyApps = (result[STORAGE_KEYS.ARR_APPS] || []) as ArrApp[];
 
-    const hasLegacyKeys = legacyApps.some(app => 'apiKey' in app && app.apiKey);
+    const hasLegacyKeys = legacyApps.some(
+      (app) => "apiKey" in app && app.apiKey,
+    );
     if (!hasLegacyKeys) {
       return;
     }
 
     const nextKeys = await readApiKeys();
-    const sanitizedApps: StoredArrApp[] = legacyApps.map(app => {
+    const sanitizedApps: StoredArrApp[] = legacyApps.map((app) => {
       if (app.apiKey) {
         nextKeys[app.id] = app.apiKey;
       }
-      const { apiKey, ...rest } = app;
+      const { apiKey: _apiKey, ...rest } = app;
       return rest;
     });
 
@@ -172,18 +201,24 @@ export const storage = {
   },
 
   async getExistingItems(appId: string): Promise<CachedExistingItems | null> {
-    const result = await chrome.storage.local.get([STORAGE_KEYS.ARR_EXISTING_ITEMS]);
+    const result = await chrome.storage.local.get([
+      STORAGE_KEYS.ARR_EXISTING_ITEMS,
+    ]);
     const allItems = result[STORAGE_KEYS.ARR_EXISTING_ITEMS] || {};
     return allItems[appId] || null;
   },
 
   async saveExistingItems(appId: string, items: SearchResult[]): Promise<void> {
-    const result = await chrome.storage.local.get([STORAGE_KEYS.ARR_EXISTING_ITEMS]);
+    const result = await chrome.storage.local.get([
+      STORAGE_KEYS.ARR_EXISTING_ITEMS,
+    ]);
     const allItems = result[STORAGE_KEYS.ARR_EXISTING_ITEMS] || {};
     allItems[appId] = {
       items,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
-    await chrome.storage.local.set({ [STORAGE_KEYS.ARR_EXISTING_ITEMS]: allItems });
-  }
+    await chrome.storage.local.set({
+      [STORAGE_KEYS.ARR_EXISTING_ITEMS]: allItems,
+    });
+  },
 };

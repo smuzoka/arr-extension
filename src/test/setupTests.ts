@@ -41,6 +41,28 @@ if (!globalThis.chrome) {
       request: vi.fn(async () => true),
       contains: vi.fn(async () => true),
     },
+    runtime: {
+      getURL: vi.fn((path = "") => `chrome-extension://test/${path}`),
+    },
+    tabs: {
+      query: vi.fn(async () => []),
+      create: vi.fn(
+        async (createProperties) =>
+          ({
+            id: 1,
+            url: createProperties.url,
+            active: Boolean(createProperties.active),
+          }) as chrome.tabs.Tab,
+      ),
+      update: vi.fn(
+        async (tabId, updateProperties) =>
+          ({
+            id: tabId,
+            url: updateProperties.url,
+            active: Boolean(updateProperties.active),
+          }) as chrome.tabs.Tab,
+      ),
+    },
   } as unknown as typeof chrome;
 }
 
@@ -56,6 +78,22 @@ if (!window.matchMedia) {
       onchange: null,
       dispatchEvent: vi.fn(),
     }) as unknown as MediaQueryList;
+}
+
+if (!globalThis.IntersectionObserver) {
+  globalThis.IntersectionObserver = class IntersectionObserver {
+    readonly root = null;
+    readonly rootMargin = "";
+    readonly thresholds: readonly number[] = [];
+    observe = vi.fn();
+    unobserve = vi.fn();
+    disconnect = vi.fn();
+    takeRecords = () => [] as IntersectionObserverEntry[];
+    constructor(
+      _cb: IntersectionObserverCallback,
+      _opts?: IntersectionObserverInit,
+    ) {}
+  } as unknown as typeof globalThis.IntersectionObserver;
 }
 
 export const resetStorageState = () => {

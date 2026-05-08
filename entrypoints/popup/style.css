@@ -346,6 +346,11 @@ body::-webkit-scrollbar-thumb {
   border-color: var(--border);
 }
 
+.app-icon:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 /* Icon-specific styles */
 .app-icon-png {
   transition: filter 0.2s;

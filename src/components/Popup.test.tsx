@@ -1,60 +1,74 @@
-import { render, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Popup from './Popup';
-import type { ArrApp } from '../api/types';
+import { resetStorageState } from '../test/setupTests';
 
-const app: ArrApp = {
-  id: '1',
-  name: 'Test',
-  type: 'sonarr',
-  url: 'http://localhost:8989',
-  apiKey: 'abc12345',
-  icon: ''
-};
-
-const { getArrApps, getSelectedText, searchSeries, getAllSeries } = vi.hoisted(() => ({
-  getArrApps: vi.fn(async () => [app]),
-  getSelectedText: vi.fn(async () => {
-    return new Promise<string>((resolve) => {
-      setTimeout(() => resolve('Star Trek'), 50);
-    });
-  }),
-  searchSeries: vi.fn(async () => []),
-  getAllSeries: vi.fn(async () => [])
-}));
-
-vi.mock('../utils/storage', () => ({
-  storage: {
-    getArrApps,
-    getSelectedText,
-    getSelectedAppId: vi.fn(async () => null),
-    setSelectedAppId: vi.fn(async () => {}),
-    migrateApiKeys: vi.fn(async () => {}),
-    addArrApp: vi.fn(),
-    updateArrApp: vi.fn(),
-    removeArrApp: vi.fn(),
-    saveArrApps: vi.fn(),
-    clearSelectedText: vi.fn(),
-    saveLastUsedOptions: vi.fn(),
-    getLastUsedOptions: vi.fn(),
-    saveArrMetadata: vi.fn(),
-    getArrMetadata: vi.fn()
-  }
-}));
+const searchSeries = vi.fn(async () => []);
+const getAllSeries = vi.fn(async () => []);
+const searchMovies = vi.fn(async () => []);
+const getAllMovies = vi.fn(async () => []);
 
 vi.mock('../api/arrApi', () => ({
   createArrApi: () => ({
     searchSeries,
     getAllSeries,
-    searchMovies: vi.fn(),
-    getAllMovies: vi.fn(),
-    testConnection: vi.fn()
-  })
+    searchMovies,
+    getAllMovies,
+    testConnection: vi.fn(),
+  }),
 }));
 
-describe('Popup init', () => {
-  it('renders without crashing', async () => {
-    const { container } = render(<Popup />);
-    expect(container).toBeDefined();
+describe('Popup setup handoff', () => {
+  beforeEach(() => {
+    resetStorageState();
+    vi.clearAllMocks();
+    vi.mocked(chrome.runtime.getURL).mockImplementation(
+      (path?: string) => `chrome-extension://test/${path ?? ''}`,
+    );
+    vi.mocked(chrome.tabs.query).mockResolvedValue([]);
+    vi.mocked(chrome.tabs.create).mockResolvedValue({ id: 7 } as chrome.tabs.Tab);
+    vi.mocked(chrome.tabs.update).mockResolvedValue({ id: 7 } as chrome.tabs.Tab);
+    (chrome.permissions.contains as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+  });
+
+  it('opens the setup tab from the empty-state button', async () => {
+    const user = userEvent.setup();
+    render(<Popup />);
+
+    await user.click(await screen.findByRole('button', { name: /add app/i }));
+
+    expect(chrome.tabs.create).toHaveBeenCalledWith({
+      url: 'chrome-extension://test/setup.html?action=add',
+      active: true,
+    });
+    expect(screen.queryByLabelText('App Name')).not.toBeInTheDocument();
+  });
+
+  it('renders apps without permission as disabled', async () => {
+    await chrome.storage.sync.set({
+      arr_apps: [
+        {
+          id: '1',
+          name: 'My Sonarr',
+          type: 'sonarr',
+          url: 'http://localhost:8989',
+          icon: '',
+        },
+      ],
+    });
+    await chrome.storage.local.set({
+      arr_api_keys: { '1': 'testapikey123' },
+    });
+    (chrome.permissions.contains as ReturnType<typeof vi.fn>).mockResolvedValue(false);
+
+    render(<Popup />);
+
+    expect(
+      await screen.findByRole('button', { name: /switch to my sonarr/i }),
+    ).toBeDisabled();
+    expect(
+      screen.getByText('Finish setup in the setup tab to grant access to this app.'),
+    ).toBeInTheDocument();
   });
 });

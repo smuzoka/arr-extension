@@ -1,82 +1,96 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { storage } from '../utils/storage';
-import type { ArrAppWithKey } from '../api/types';
-import { getOrigin } from '../utils/validators';
-
-type PermissionState = {
-  hasPermission: boolean;
-  error: string | null;
-};
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { storage } from "../utils/storage";
+import type { ArrAppWithKey } from "../api/types";
+import { hasAppPermission } from "../utils/appPermissions";
 
 export const useSelectedApp = () => {
   const [apps, setApps] = useState<ArrAppWithKey[]>([]);
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
-  const [permissionState, setPermissionState] = useState<PermissionState>({
-    hasPermission: true,
-    error: null
-  });
+  const [initialSearchTerm, setInitialSearchTerm] = useState<string | null>(
+    null,
+  );
+  const [permissionByAppId, setPermissionByAppId] = useState<
+    Record<string, boolean>
+  >({});
+
+  const refreshPermissionState = useCallback(
+    async (savedApps: ArrAppWithKey[]) => {
+      const entries = await Promise.all(
+        savedApps.map(
+          async (app) => [app.id, await hasAppPermission(app)] as const,
+        ),
+      );
+      const nextPermissions = Object.fromEntries(entries);
+      setPermissionByAppId(nextPermissions);
+      return nextPermissions;
+    },
+    [],
+  );
 
   useEffect(() => {
-    const load = async () => {
-      const savedApps = await storage.getArrApps();
-      setApps(savedApps);
+    let isMounted = true;
 
+    const initializePopup = async () => {
+      await storage.migrateApiKeys();
+
+      const savedApps = await storage.getArrApps();
+      if (!isMounted) return;
+      setApps(savedApps);
+      const permissions = await refreshPermissionState(savedApps);
       const persistedId = await storage.getSelectedAppId();
-      const initialId = persistedId && savedApps.some(app => app.id === persistedId)
-        ? persistedId
-        : savedApps[0]?.id ?? null;
+      const fallbackApp = savedApps.find((app) => permissions[app.id]) ?? null;
+      const initialId =
+        persistedId && permissions[persistedId]
+          ? persistedId
+          : (fallbackApp?.id ?? null);
 
       setSelectedAppId(initialId);
       await storage.setSelectedAppId(initialId);
+
+      const text = await storage.getSelectedText();
+      if (!isMounted) return;
+      if (text) {
+        setInitialSearchTerm(text);
+        await storage.clearSelectedText();
+      }
     };
 
-    load();
+    initializePopup();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const selectedApp = useMemo(
-    () => apps.find(app => app.id === selectedAppId) || null,
-    [apps, selectedAppId]
+    () => apps.find((app) => app.id === selectedAppId) || null,
+    [apps, selectedAppId],
   );
 
-  const ensurePermission = useCallback(async (app: ArrAppWithKey | null) => {
-    if (!app) return true;
-    const origin = getOrigin(app.url);
-    if (!origin) return false;
+  const selectApp = useCallback(
+    async (app: ArrAppWithKey) => {
+      if (!permissionByAppId[app.id]) return;
+      setSelectedAppId(app.id);
+      await storage.setSelectedAppId(app.id);
+    },
+    [permissionByAppId],
+  );
 
-    const hasPermission = await chrome.permissions.contains({
-      origins: [`${origin}/*`]
-    });
-
-    if (!hasPermission) {
-      setPermissionState({
-        hasPermission: false,
-        error: 'Host permission not granted for this server.'
-      });
-      return false;
-    }
-
-    setPermissionState({ hasPermission: true, error: null });
-    return true;
-  }, []);
-
-  const selectApp = useCallback(async (app: ArrAppWithKey) => {
-    const allowed = await ensurePermission(app);
-    if (!allowed) return;
-    setSelectedAppId(app.id);
-    await storage.setSelectedAppId(app.id);
-  }, [ensurePermission]);
-
-  const saveApps = useCallback(async (nextApps: ArrAppWithKey[]) => {
-    setApps(nextApps);
-    await storage.saveArrApps(nextApps);
-  }, []);
+  const saveApps = useCallback(
+    async (nextApps: ArrAppWithKey[]) => {
+      setApps(nextApps);
+      await refreshPermissionState(nextApps);
+      await storage.saveArrApps(nextApps);
+    },
+    [refreshPermissionState],
+  );
 
   return {
     apps,
     selectedApp,
-    permissionState,
+    permissionByAppId,
+    initialSearchTerm,
     selectApp,
     saveApps,
-    setApps
+    setApps,
   };
 };

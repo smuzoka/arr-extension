@@ -5,27 +5,38 @@ import { getAppIcon } from '../utils/icons';
 interface AppSwitcherProps {
   apps: ArrApp[];
   selectedApp: ArrApp | null;
+  disabledAppIds: Set<string>;
   onAppSelect: (app: ArrApp) => void;
 }
 
-const AppSwitcher: React.FC<AppSwitcherProps> = ({ apps, selectedApp, onAppSelect }) => {
+const AppSwitcher: React.FC<AppSwitcherProps> = ({
+  apps,
+  selectedApp,
+  disabledAppIds,
+  onAppSelect,
+}) => {
   if (apps.length === 0) {
     return null;
   }
 
   return (
     <div className="app-switcher">
-      {apps.map(app => (
-        <button
-          key={app.id}
-          className={`app-icon ${selectedApp?.id === app.id ? 'active' : ''}`}
-          onClick={() => onAppSelect(app)}
-          title={app.name}
-          aria-label={`Switch to ${app.name}`}
-        >
-          {getAppIcon(app.type)}
-        </button>
-      ))}
+      {apps.map((app) => {
+        const disabled = disabledAppIds.has(app.id);
+
+        return (
+          <button
+            key={app.id}
+            className={`app-icon ${selectedApp?.id === app.id ? 'active' : ''}`}
+            onClick={() => onAppSelect(app)}
+            title={disabled ? `${app.name} requires setup` : app.name}
+            aria-label={`Switch to ${app.name}`}
+            disabled={disabled}
+          >
+            {getAppIcon(app.type)}
+          </button>
+        );
+      })}
     </div>
   );
 };

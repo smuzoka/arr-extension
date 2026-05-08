@@ -1,4 +1,9 @@
-import type { ArrAppWithKey, QualityProfile, RootFolder, SystemStatus } from "./types";
+import type {
+  ArrAppWithKey,
+  QualityProfile,
+  RootFolder,
+  SystemStatus,
+} from "./types";
 
 export abstract class ArrApiBase {
   protected app: ArrAppWithKey;
@@ -29,11 +34,40 @@ export abstract class ArrApiBase {
       });
 
       if (response.status === 401) {
-        throw new Error('Invalid API key.');
+        throw new Error("Invalid API key.");
       }
 
       if (!response.ok) {
-        throw new Error('Unable to connect. Check your URL.');
+        let message = "Unable to connect. Check your URL.";
+        try {
+          const body = await response.json();
+          if (Array.isArray(body) && body.length > 0) {
+            const first = body[0] as {
+              errorCode?: unknown;
+              errorMessage?: unknown;
+            };
+            const code =
+              typeof first?.errorCode === "string" ? first.errorCode : "";
+            const errorMessage =
+              typeof first?.errorMessage === "string" ? first.errorMessage : "";
+            if (
+              code.includes("ExistsValidator") ||
+              /already been added/i.test(errorMessage)
+            ) {
+              message = "Already exists.";
+            } else if (errorMessage) {
+              message = errorMessage;
+            }
+          } else if (body && typeof body === "object") {
+            const fallbackMessage = (body as { message?: unknown }).message;
+            if (typeof fallbackMessage === "string" && fallbackMessage.trim()) {
+              message = fallbackMessage;
+            }
+          }
+        } catch {
+          // Fall back to default error message.
+        }
+        throw new Error(message);
       }
 
       try {
@@ -43,10 +77,10 @@ export abstract class ArrApiBase {
       }
     } catch (err) {
       if (err instanceof TypeError) {
-        throw new Error('Unable to connect. Check your URL.');
+        throw new Error("Unable to connect. Check your URL.");
       }
       if (err instanceof DOMException && err.name === "AbortError") {
-        throw new Error('Server timed out.');
+        throw new Error("Server timed out.");
       }
       throw err;
     } finally {

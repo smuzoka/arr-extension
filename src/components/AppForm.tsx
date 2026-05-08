@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { createArrApi } from '../api/arrApi';
-import type { ArrApp } from '../api/types';
+import React, { useEffect, useState } from 'react';
+import type { ArrAppWithKey } from '../api/types';
 import {
-  getOrigin,
   isValidApiKey,
   isValidHttpUrl,
   normalizeUrl,
@@ -10,12 +8,15 @@ import {
 } from '../utils/validators';
 
 interface AppFormProps {
-  app?: ArrApp | null;
-  onSubmit: (app: Omit<ArrApp, 'id'>) => void;
+  app?: ArrAppWithKey | null;
+  onSubmit: (app: Omit<ArrAppWithKey, 'id'>) => Promise<void> | void;
   onCancel: () => void;
+  onTestConnection?: (
+    app: Omit<ArrAppWithKey, 'id'>,
+  ) => Promise<{ success: boolean; message: string }>;
 }
 
-const AppForm: React.FC<AppFormProps> = ({ app, onSubmit, onCancel }) => {
+const AppForm: React.FC<AppFormProps> = ({ app, onSubmit, onCancel, onTestConnection }) => {
   const [name, setName] = useState('');
   const [type, setType] = useState<ArrApp['type']>('sonarr');
   const [url, setUrl] = useState('');
@@ -42,13 +43,13 @@ const AppForm: React.FC<AppFormProps> = ({ app, onSubmit, onCancel }) => {
     }
   }, [app]);
 
-  const requestOriginPermission = async (rawUrl: string): Promise<boolean> => {
-    const origin = getOrigin(rawUrl);
-    if (!origin) {
-      return false;
-    }
-    return chrome.permissions.request({ origins: [`${origin}/*`] });
-  };
+  const buildAppPayload = (): Omit<ArrAppWithKey, 'id'> => ({
+    name: name.trim(),
+    type,
+    url: normalizeUrl(url),
+    apiKey,
+    icon: '',
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,26 +60,19 @@ const AppForm: React.FC<AppFormProps> = ({ app, onSubmit, onCancel }) => {
       return;
     }
 
-    const normalizedUrl = normalizeUrl(url);
-    const granted = await requestOriginPermission(normalizedUrl);
-
-    if (!granted) {
-      setFormError('Permission denied for this server origin.');
-      return;
-    }
-
-    onSubmit({
-      name: name.trim(),
-      type,
-      url: normalizedUrl,
-      apiKey,
-      icon: ''
-    });
+    await onSubmit(buildAppPayload());
   };
 
   const handleTestConnection = async () => {
+    if (!onTestConnection) {
+      return;
+    }
+
     if (!url || !apiKey || urlError || apiKeyError) {
-      setTestResult({ success: false, message: 'Please fill in URL and API Key first' });
+      setTestResult({
+        success: false,
+        message: 'Please fill in URL and API Key first',
+      });
       return;
     }
 
@@ -86,27 +80,8 @@ const AppForm: React.FC<AppFormProps> = ({ app, onSubmit, onCancel }) => {
     setTestResult(null);
 
     try {
-      const testApp: ArrApp = {
-        id: 'test',
-        name: 'Test',
-        type,
-        url: normalizeUrl(url),
-        apiKey,
-        icon: ''
-      };
-
-      const api = createArrApi(testApp);
-      const status = await api.testConnection();
-      
-      setTestResult({ 
-        success: true, 
-        message: `Connected successfully! Version: ${status.version}` 
-      });
-    } catch (error) {
-      setTestResult({ 
-        success: false, 
-        message: error instanceof Error ? error.message : 'Connection failed' 
-      });
+      const result = await onTestConnection(buildAppPayload());
+      setTestResult(result);
     } finally {
       setTesting(false);
     }
@@ -201,14 +176,16 @@ const AppForm: React.FC<AppFormProps> = ({ app, onSubmit, onCancel }) => {
         </div>
 
         <div className="form-actions">
-          <button
-            type="button"
-            className="button secondary"
-            onClick={handleTestConnection}
-            disabled={testing || !url || !apiKey || Boolean(urlError) || Boolean(apiKeyError)}
-          >
-            {testing ? 'Testing...' : 'Test Connection'}
-          </button>
+          {onTestConnection && (
+            <button
+              type="button"
+              className="button secondary"
+              onClick={handleTestConnection}
+              disabled={testing || !url || !apiKey || Boolean(urlError) || Boolean(apiKeyError)}
+            >
+              {testing ? 'Testing...' : 'Test Connection'}
+            </button>
+          )}
           <button type="button" className="button secondary" onClick={onCancel}>
             Cancel
           </button>
