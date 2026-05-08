@@ -17,10 +17,6 @@ interface AppSettingsPanelProps {
   onDelete: (appId: string) => void;
   onGrantPermission: (app: ArrAppWithKey) => void;
   permissionByAppId: Record<string, boolean>;
-  message?: {
-    type: 'success' | 'error';
-    text: string;
-  } | null;
 }
 
 const AppSettingsPanel: React.FC<AppSettingsPanelProps> = ({
@@ -35,11 +31,17 @@ const AppSettingsPanel: React.FC<AppSettingsPanelProps> = ({
   onDelete,
   onGrantPermission,
   permissionByAppId,
-  message,
 }) => (
   <div className="settings-view">
-    <div className="settings-layout">
-      <div className="settings-list">
+    {showForm ? (
+      <AppForm
+        app={editingApp}
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+        onTestConnection={onTestConnection}
+      />
+    ) : (
+      <>
         <div className="add-app-section">
           <button className="btn btn-primary" onClick={onAdd}>
             <i className="fas fa-plus"></i> Add New App
@@ -102,23 +104,8 @@ const AppSettingsPanel: React.FC<AppSettingsPanelProps> = ({
             ))}
           </div>
         )}
-      </div>
-
-      <div className="settings-form">
-        {message && <div className={`message ${message.type}`}>{message.text}</div>}
-
-        {showForm ? (
-          <AppForm
-            app={editingApp}
-            onSubmit={onSubmit}
-            onCancel={onCancel}
-            onTestConnection={onTestConnection}
-          />
-        ) : (
-          <div className="form-placeholder">Select an app to edit or add a new one.</div>
-        )}
-      </div>
-    </div>
+      </>
+    )}
   </div>
 );
 
