@@ -80,6 +80,15 @@ tmp/
 temp/
 .worktrees/
 
+# Docs and local planning
+docs/
+PRODUCT.md
+
+# Playwright artifacts and e2e tests
+test-results/
+playwright-report/
+tests/e2e/
+
 # Editor directories and files
 .cursor/
 .vscode/
