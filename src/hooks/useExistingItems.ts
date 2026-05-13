@@ -54,7 +54,7 @@ export const useExistingItems = (app: ArrAppWithKey | null) => {
 
     try {
       const api = createArrApi(app);
-      let existingItems = [];
+      let existingItems: SearchResult[] = [];
 
       if (app.type === "sonarr") {
         existingItems = await api.getAllSeries();
