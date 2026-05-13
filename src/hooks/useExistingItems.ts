@@ -94,10 +94,16 @@ export const useExistingItems = (app: ArrAppWithKey | null) => {
       }
 
       const cached = await storage.getExistingIds(app.id);
-      if (cached && isMounted) {
+      if (!isMounted) {
+        return;
+      }
+      if (cached) {
         setAddedIds(new Set(cached.ids));
       }
 
+      if (!isMounted) {
+        return;
+      }
       await refresh();
     };
 

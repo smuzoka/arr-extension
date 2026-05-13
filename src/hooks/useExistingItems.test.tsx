@@ -3,6 +3,21 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { useExistingItems } from "./useExistingItems";
 import type { ArrAppWithKey } from "../api/types";
 
+const createDeferred = <T,>() => {
+  let resolve: (value: T) => void;
+  let reject: (reason?: unknown) => void;
+  const promise = new Promise<T>((innerResolve, innerReject) => {
+    resolve = innerResolve;
+    reject = innerReject;
+  });
+
+  return {
+    promise,
+    resolve: resolve!,
+    reject: reject!,
+  };
+};
+
 const { getAllSeries, getAllMovies } = vi.hoisted(() => ({
   getAllSeries: vi.fn(async () => []),
   getAllMovies: vi.fn(async () => []),
@@ -168,6 +183,57 @@ describe("useExistingItems", () => {
 
     expect(saveExistingIds).toHaveBeenCalledTimes(1);
     expect(saveExistingIds).toHaveBeenCalledWith(radarrApp.id, [202]);
+  });
+
+  it("does not cancel the new app refresh when the old cache resolves late", async () => {
+    const cachedDeferred = createDeferred<{
+      ids: number[];
+      timestamp: number;
+    }>();
+    const moviesDeferred = createDeferred<any[]>();
+
+    getExistingIds.mockImplementation((appId: string) => {
+      if (appId === sonarrApp.id) {
+        return cachedDeferred.promise;
+      }
+      return Promise.resolve(null);
+    });
+    getAllSeries.mockResolvedValue([]);
+    getAllMovies.mockReturnValueOnce(moviesDeferred.promise);
+
+    const { result, rerender } = renderHook(
+      ({ app }) => useExistingItems(app),
+      {
+        initialProps: { app: sonarrApp },
+      },
+    );
+
+    rerender({ app: radarrApp });
+
+    await waitFor(() => {
+      expect(getAllMovies).toHaveBeenCalledTimes(1);
+    });
+
+    cachedDeferred.resolve({
+      ids: [111],
+      timestamp: Date.now(),
+    });
+    await Promise.resolve();
+
+    moviesDeferred.resolve([
+      {
+        id: 10,
+        title: "Radarr",
+        tmdbId: 202,
+        images: [],
+        kind: "movie",
+      },
+    ]);
+
+    await waitFor(() => {
+      expect(result.current.isSyncing).toBe(false);
+      expect(result.current.addedIds.has(202)).toBe(true);
+    });
   });
 
   it("clears error when app becomes null", async () => {
