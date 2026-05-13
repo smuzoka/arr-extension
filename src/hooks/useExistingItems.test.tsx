@@ -185,6 +185,85 @@ describe("useExistingItems", () => {
     expect(saveExistingIds).toHaveBeenCalledWith(radarrApp.id, [202]);
   });
 
+  it("ignores stale refresh when new app cache read is slow", async () => {
+    const seriesDeferred = createDeferred<any[]>();
+    const moviesDeferred = createDeferred<any[]>();
+    const cacheDeferred = createDeferred<{
+      ids: number[];
+      timestamp: number;
+    }>();
+
+    getAllSeries.mockReturnValueOnce(seriesDeferred.promise);
+    getAllMovies.mockReturnValueOnce(moviesDeferred.promise);
+    getExistingIds.mockImplementation((appId: string) => {
+      if (appId === sonarrApp.id) {
+        return Promise.resolve(null);
+      }
+      if (appId === radarrApp.id) {
+        return cacheDeferred.promise;
+      }
+      return Promise.resolve(null);
+    });
+
+    const { result, rerender } = renderHook(
+      ({ app }) => useExistingItems(app),
+      {
+        initialProps: { app: sonarrApp },
+      },
+    );
+
+    await waitFor(() => {
+      expect(result.current.isSyncing).toBe(true);
+    });
+
+    rerender({ app: radarrApp });
+
+    await waitFor(() => {
+      expect(getExistingIds).toHaveBeenCalledWith(radarrApp.id);
+    });
+
+    expect(getAllMovies).not.toHaveBeenCalled();
+
+    seriesDeferred.resolve([
+      {
+        id: 20,
+        title: "Sonarr",
+        tvdbId: 303,
+        images: [],
+        kind: "series",
+      },
+    ]);
+
+    await waitFor(() => {
+      expect(result.current.addedIds.has(303)).toBe(false);
+    });
+
+    cacheDeferred.resolve({
+      ids: [],
+      timestamp: Date.now(),
+    });
+
+    await waitFor(() => {
+      expect(getAllMovies).toHaveBeenCalledTimes(1);
+    });
+
+    moviesDeferred.resolve([
+      {
+        id: 10,
+        title: "Radarr",
+        tmdbId: 202,
+        images: [],
+        kind: "movie",
+      },
+    ]);
+
+    await waitFor(() => {
+      expect(result.current.addedIds.has(202)).toBe(true);
+    });
+
+    expect(result.current.addedIds.has(303)).toBe(false);
+  });
+
   it("does not cancel the new app refresh when the old cache resolves late", async () => {
     const cachedDeferred = createDeferred<{
       ids: number[];

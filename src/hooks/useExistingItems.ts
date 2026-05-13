@@ -39,78 +39,94 @@ export const useExistingItems = (app: ArrAppWithKey | null) => {
     [app?.type],
   );
 
-  const refresh = useCallback(async () => {
-    if (!app) {
-      refreshToken.current += 1;
-      setAddedIds(new Set());
-      setIsSyncing(false);
-      setError(null);
-      return;
-    }
+  const refresh = useCallback(
+    async (requestId?: number) => {
+      const activeRequestId = requestId ?? ++refreshToken.current;
 
-    const requestId = (refreshToken.current += 1);
-    setIsSyncing(true);
-    setError(null);
-
-    try {
-      const api = createArrApi(app);
-      let existingItems: SearchResult[] = [];
-
-      if (app.type === "sonarr") {
-        existingItems = await api.getAllSeries();
-      } else if (app.type === "radarr") {
-        existingItems = await api.getAllMovies();
-      }
-
-      const ids = extractExistingIds(existingItems);
-      if (refreshToken.current !== requestId) {
+      if (refreshToken.current !== activeRequestId) {
         return;
       }
-      setAddedIds(ids);
-      await storage.saveExistingIds(app.id, Array.from(ids));
-    } catch (err) {
-      if (refreshToken.current !== requestId) {
-        return;
-      }
-      setError(
-        err instanceof Error ? err.message : "Failed to load existing items",
-      );
-    } finally {
-      if (refreshToken.current === requestId) {
-        setIsSyncing(false);
-      }
-    }
-  }, [app, extractExistingIds]);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const load = async () => {
       if (!app) {
-        refreshToken.current += 1;
         setAddedIds(new Set());
         setIsSyncing(false);
         setError(null);
         return;
       }
 
-      const cached = await storage.getExistingIds(app.id);
-      if (!isMounted) {
+      setIsSyncing(true);
+      setError(null);
+
+      try {
+        const api = createArrApi(app);
+        let existingItems: SearchResult[] = [];
+
+        if (app.type === "sonarr") {
+          existingItems = await api.getAllSeries();
+        } else if (app.type === "radarr") {
+          existingItems = await api.getAllMovies();
+        }
+
+        if (refreshToken.current !== activeRequestId) {
+          return;
+        }
+
+        const ids = extractExistingIds(existingItems);
+        setAddedIds(ids);
+        await storage.saveExistingIds(app.id, Array.from(ids));
+      } catch (err) {
+        if (refreshToken.current !== activeRequestId) {
+          return;
+        }
+        setError(
+          err instanceof Error ? err.message : "Failed to load existing items",
+        );
+      } finally {
+        if (refreshToken.current === activeRequestId) {
+          setIsSyncing(false);
+        }
+      }
+    },
+    [app, extractExistingIds],
+  );
+
+  useEffect(() => {
+    const load = async () => {
+      const requestId = ++refreshToken.current;
+
+      if (!app) {
+        setAddedIds(new Set());
+        setIsSyncing(false);
+        setError(null);
         return;
       }
+
+      let cached = null;
+
+      try {
+        cached = await storage.getExistingIds(app.id);
+      } catch {
+        cached = null;
+      }
+
+      if (refreshToken.current !== requestId) {
+        return;
+      }
+
       if (cached) {
         setAddedIds(new Set(cached.ids));
       }
 
-      if (!isMounted) {
+      if (refreshToken.current !== requestId) {
         return;
       }
-      await refresh();
+
+      await refresh(requestId);
     };
 
     load();
     return () => {
-      isMounted = false;
+      refreshToken.current += 1;
     };
   }, [app, refresh]);
 
