@@ -149,27 +149,18 @@ describe("storage", () => {
     });
   });
 
-  describe("existing items cache", () => {
-    it("saves and retrieves cached items per app", async () => {
-      const items = [
-        {
-          kind: "series" as const,
-          id: 1,
-          title: "Test",
-          tvdbId: 123,
-          images: [],
-        },
-      ];
-      await storage.saveExistingItems("app-1", items);
+  describe("existing ids cache", () => {
+    it("saves and retrieves cached ids per app", async () => {
+      await storage.saveExistingIds("app-1", [123, 456]);
 
-      const cached = await storage.getExistingItems("app-1");
+      const cached = await storage.getExistingIds("app-1");
       expect(cached).not.toBeNull();
-      expect(cached!.items).toEqual(items);
+      expect(cached!.ids).toEqual([123, 456]);
       expect(cached!.timestamp).toBeGreaterThan(0);
     });
 
     it("returns null for uncached app", async () => {
-      const cached = await storage.getExistingItems("nonexistent");
+      const cached = await storage.getExistingIds("nonexistent");
       expect(cached).toBeNull();
     });
   });
