@@ -236,6 +236,44 @@ describe("useExistingItems", () => {
     });
   });
 
+  it("ignores refresh results when app becomes null", async () => {
+    getExistingIds.mockResolvedValue(null);
+    const refreshDeferred = createDeferred<any[]>();
+
+    getAllSeries.mockReturnValueOnce(refreshDeferred.promise);
+
+    const { result, rerender } = renderHook(
+      ({ app }) => useExistingItems(app),
+      {
+        initialProps: { app: sonarrApp },
+      },
+    );
+
+    await waitFor(() => {
+      expect(result.current.isSyncing).toBe(true);
+    });
+
+    rerender({ app: null });
+
+    refreshDeferred.resolve([
+      {
+        id: 20,
+        title: "Sonarr",
+        tvdbId: 303,
+        images: [],
+        kind: "series",
+      },
+    ]);
+
+    await waitFor(() => {
+      expect(result.current.addedIds.size).toBe(0);
+      expect(result.current.error).toBeNull();
+      expect(result.current.isSyncing).toBe(false);
+    });
+
+    expect(saveExistingIds).not.toHaveBeenCalled();
+  });
+
   it("clears error when app becomes null", async () => {
     getExistingIds.mockResolvedValue(null);
     getAllSeries.mockRejectedValueOnce(new Error("boom"));

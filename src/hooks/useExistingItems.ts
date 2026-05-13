@@ -87,6 +87,7 @@ export const useExistingItems = (app: ArrAppWithKey | null) => {
 
     const load = async () => {
       if (!app) {
+        refreshToken.current += 1;
         setAddedIds(new Set());
         setIsSyncing(false);
         setError(null);
