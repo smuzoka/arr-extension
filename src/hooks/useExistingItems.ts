@@ -4,8 +4,8 @@ import { createArrApi } from "../api/arrApi";
 import type { ArrAppWithKey, SearchResult } from "../api/types";
 
 export const useExistingItems = (app: ArrAppWithKey | null) => {
-  const [addedItems, setAddedItems] = useState<Set<number>>(new Set());
-  const [loading, setLoading] = useState(false);
+  const [addedIds, setAddedIds] = useState<Set<number>>(new Set());
+  const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const extractExistingIds = useCallback(
@@ -40,11 +40,12 @@ export const useExistingItems = (app: ArrAppWithKey | null) => {
 
   const refresh = useCallback(async () => {
     if (!app) {
-      setAddedItems(new Set());
+      setAddedIds(new Set());
+      setIsSyncing(false);
       return;
     }
 
-    setLoading(true);
+    setIsSyncing(true);
     setError(null);
 
     try {
@@ -58,14 +59,14 @@ export const useExistingItems = (app: ArrAppWithKey | null) => {
       }
 
       const ids = extractExistingIds(existingItems);
-      setAddedItems(ids);
-      await storage.saveExistingItems(app.id, existingItems);
+      setAddedIds(ids);
+      await storage.saveExistingIds(app.id, Array.from(ids));
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to load existing items",
       );
     } finally {
-      setLoading(false);
+      setIsSyncing(false);
     }
   }, [app, extractExistingIds]);
 
@@ -74,18 +75,15 @@ export const useExistingItems = (app: ArrAppWithKey | null) => {
 
     const load = async () => {
       if (!app) {
-        setAddedItems(new Set());
+        setAddedIds(new Set());
         return;
       }
 
-      // Load cached items first
-      const cached = await storage.getExistingItems(app.id);
+      const cached = await storage.getExistingIds(app.id);
       if (cached && isMounted) {
-        const ids = extractExistingIds(cached.items);
-        setAddedItems(ids);
+        setAddedIds(new Set(cached.ids));
       }
 
-      // Refresh in background
       await refresh();
     };
 
@@ -93,11 +91,11 @@ export const useExistingItems = (app: ArrAppWithKey | null) => {
     return () => {
       isMounted = false;
     };
-  }, [app, refresh, extractExistingIds]);
+  }, [app, refresh]);
 
   return {
-    addedItems,
-    loading,
+    addedIds,
+    isSyncing,
     error,
     reload: refresh,
   };
