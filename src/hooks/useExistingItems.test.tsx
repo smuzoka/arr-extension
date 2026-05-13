@@ -36,6 +36,15 @@ const sonarrApp: ArrAppWithKey = {
   icon: "",
 };
 
+const radarrApp: ArrAppWithKey = {
+  id: "radarr-1",
+  name: "Radarr",
+  type: "radarr",
+  url: "http://localhost:7878",
+  apiKey: "abc12345",
+  icon: "",
+};
+
 describe("useExistingItems", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -91,6 +100,98 @@ describe("useExistingItems", () => {
     await waitFor(() => {
       expect(result.current.isSyncing).toBe(false);
       expect(result.current.error).toBe("boom");
+    });
+  });
+
+  it("ignores stale refresh results after app switch", async () => {
+    getExistingIds.mockResolvedValue(null);
+
+    let resolveSeries: (value: any[]) => void;
+    const seriesPromise = new Promise<any[]>((resolve) => {
+      resolveSeries = resolve;
+    });
+
+    let resolveMovies: (value: any[]) => void;
+    const moviesPromise = new Promise<any[]>((resolve) => {
+      resolveMovies = resolve;
+    });
+
+    getAllSeries.mockReturnValueOnce(seriesPromise);
+    getAllMovies.mockReturnValueOnce(moviesPromise);
+
+    const { result, rerender } = renderHook(
+      ({ app }) => useExistingItems(app),
+      {
+        initialProps: { app: sonarrApp },
+      },
+    );
+
+    await waitFor(() => {
+      expect(result.current.isSyncing).toBe(true);
+    });
+
+    rerender({ app: radarrApp });
+
+    await waitFor(() => {
+      expect(getAllMovies).toHaveBeenCalledTimes(1);
+    });
+
+    resolveMovies!([
+      {
+        id: 10,
+        title: "Radarr",
+        tmdbId: 202,
+        images: [],
+        kind: "movie",
+      },
+    ]);
+
+    await waitFor(() => {
+      expect(result.current.isSyncing).toBe(false);
+      expect(result.current.addedIds.has(202)).toBe(true);
+    });
+
+    resolveSeries!([
+      {
+        id: 20,
+        title: "Sonarr",
+        tvdbId: 303,
+        images: [],
+        kind: "series",
+      },
+    ]);
+
+    await waitFor(() => {
+      expect(result.current.addedIds.has(202)).toBe(true);
+      expect(result.current.addedIds.has(303)).toBe(false);
+    });
+
+    expect(saveExistingIds).toHaveBeenCalledTimes(1);
+    expect(saveExistingIds).toHaveBeenCalledWith(radarrApp.id, [202]);
+  });
+
+  it("clears error when app becomes null", async () => {
+    getExistingIds.mockResolvedValue(null);
+    getAllSeries.mockRejectedValueOnce(new Error("boom"));
+
+    const { result, rerender } = renderHook(
+      ({ app }) => useExistingItems(app),
+      {
+        initialProps: { app: sonarrApp },
+      },
+    );
+
+    await waitFor(() => {
+      expect(result.current.error).toBe("boom");
+      expect(result.current.isSyncing).toBe(false);
+    });
+
+    rerender({ app: null });
+
+    await waitFor(() => {
+      expect(result.current.error).toBeNull();
+      expect(result.current.addedIds.size).toBe(0);
+      expect(result.current.isSyncing).toBe(false);
     });
   });
 });

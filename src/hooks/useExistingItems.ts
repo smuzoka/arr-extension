@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { storage } from "../utils/storage";
 import { createArrApi } from "../api/arrApi";
 import type { ArrAppWithKey, SearchResult } from "../api/types";
@@ -7,6 +7,7 @@ export const useExistingItems = (app: ArrAppWithKey | null) => {
   const [addedIds, setAddedIds] = useState<Set<number>>(new Set());
   const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const refreshToken = useRef(0);
 
   const extractExistingIds = useCallback(
     (items: SearchResult[]) => {
@@ -40,11 +41,14 @@ export const useExistingItems = (app: ArrAppWithKey | null) => {
 
   const refresh = useCallback(async () => {
     if (!app) {
+      refreshToken.current += 1;
       setAddedIds(new Set());
       setIsSyncing(false);
+      setError(null);
       return;
     }
 
+    const requestId = (refreshToken.current += 1);
     setIsSyncing(true);
     setError(null);
 
@@ -59,14 +63,22 @@ export const useExistingItems = (app: ArrAppWithKey | null) => {
       }
 
       const ids = extractExistingIds(existingItems);
+      if (refreshToken.current !== requestId) {
+        return;
+      }
       setAddedIds(ids);
       await storage.saveExistingIds(app.id, Array.from(ids));
     } catch (err) {
+      if (refreshToken.current !== requestId) {
+        return;
+      }
       setError(
         err instanceof Error ? err.message : "Failed to load existing items",
       );
     } finally {
-      setIsSyncing(false);
+      if (refreshToken.current === requestId) {
+        setIsSyncing(false);
+      }
     }
   }, [app, extractExistingIds]);
 
@@ -76,6 +88,8 @@ export const useExistingItems = (app: ArrAppWithKey | null) => {
     const load = async () => {
       if (!app) {
         setAddedIds(new Set());
+        setIsSyncing(false);
+        setError(null);
         return;
       }
 
