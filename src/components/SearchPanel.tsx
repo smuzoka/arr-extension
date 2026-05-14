@@ -19,6 +19,8 @@ interface SearchPanelProps {
   onFiltersChange: (filters: SearchFilters) => void;
   loading: boolean;
   error: string | null;
+  existingItemsError: string | null;
+  isSyncing: boolean;
   addedIds: Set<number>;
   onResultClick: (result: SearchResult) => void;
   onAddAppClick: () => void;
@@ -38,6 +40,8 @@ const SearchPanel: React.FC<SearchPanelProps> = ({
   onFiltersChange,
   loading,
   error,
+  existingItemsError,
+  isSyncing,
   addedIds,
   onResultClick,
   onAddAppClick,
@@ -56,6 +60,17 @@ const SearchPanel: React.FC<SearchPanelProps> = ({
       <div className="message error">
         Finish setup in the setup tab to grant access to this app.
       </div>
+    )}
+
+    {isSyncing && (
+      <div className="message info">
+        <i className="fas fa-sync fa-spin"></i>
+        <span>Syncing library...</span>
+      </div>
+    )}
+
+    {(error || existingItemsError) && (
+      <div className="error">{error ?? existingItemsError}</div>
     )}
 
     <SearchBar
@@ -82,8 +97,6 @@ const SearchPanel: React.FC<SearchPanelProps> = ({
         </button>
       </div>
     )}
-
-    {error && <div className="error">{error}</div>}
 
     {loading && (
       <div className="loading-message">

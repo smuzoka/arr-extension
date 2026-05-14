@@ -794,6 +794,15 @@ body::-webkit-scrollbar-thumb {
   color: #991b1b;
 } 
 
+.message.info {
+  background: #e0f2fe;
+  border-color: #bae6fd;
+  color: #0c4a6e;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* Form Styles */
 .form-container {
   display: flex;

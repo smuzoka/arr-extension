@@ -12,7 +12,12 @@ type ViewState = 'search' | 'add';
 const Popup: React.FC = () => {
   const { apps, selectedApp, permissionByAppId, selectApp, initialSearchTerm } = useSelectedApp();
   const { query, setQuery, results: filteredResults, allResults, filters, setFilters, loading, error } = useSearch(selectedApp);
-  const { addedIds } = useExistingItems(selectedApp);
+  const {
+    addedIds,
+    isSyncing,
+    error: existingItemsError,
+    reload,
+  } = useExistingItems(selectedApp);
   const { theme, toggleTheme } = useTheme();
 
   // Load selected text from context menu into search
@@ -67,10 +72,11 @@ const Popup: React.FC = () => {
     setViewState('add');
   }, []);
 
-  const handleAddSuccess = useCallback(() => {
+  const handleAddSuccess = useCallback((_: SearchResult) => {
+    void reload();
     setViewState('search');
     setSelectedResult(null);
-  }, []);
+  }, [reload]);
 
   const handleBackToSearch = useCallback(() => {
     setViewState('search');
@@ -136,7 +142,9 @@ const Popup: React.FC = () => {
           onFiltersChange={setFilters}
           loading={loading}
           error={error}
+          existingItemsError={existingItemsError}
           addedIds={addedIds}
+          isSyncing={isSyncing}
           onResultClick={handleResultClick}
           onAddAppClick={() => void openSetupPage('?action=add')}
         />
