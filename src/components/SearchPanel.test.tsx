@@ -56,6 +56,19 @@ describe("SearchPanel", () => {
     expect(screen.queryByText(/syncing library/i)).toBeNull();
   });
 
+  it("shows existing items error when provided", () => {
+    render(
+      <SearchPanel
+        {...baseProps}
+        existingItemsError="Existing items sync failed"
+      />,
+    );
+
+    expect(
+      screen.getByText(/existing items sync failed/i),
+    ).toBeInTheDocument();
+  });
+
   it("shows setup banner when app access is required", () => {
     render(<SearchPanel {...baseProps} selectedApp={null} />);
 
