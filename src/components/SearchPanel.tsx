@@ -4,6 +4,7 @@ import SearchBar from './SearchBar';
 import AppSwitcher from './AppSwitcher';
 import ResultCard from './ResultCard';
 import SearchFiltersComponent, { type SearchFilterOptions } from './SearchFilters';
+import { SpinnerIcon, SyncIcon } from '../utils/icons';
 
 interface SearchPanelProps {
   apps: ArrAppWithKey[];
@@ -64,7 +65,7 @@ const SearchPanel: React.FC<SearchPanelProps> = ({
 
     {isSyncing && (
       <div className="message info">
-        <i className="fas fa-sync fa-spin"></i>
+        <SyncIcon className="spin" />
         <span>Syncing library...</span>
       </div>
     )}
@@ -100,7 +101,7 @@ const SearchPanel: React.FC<SearchPanelProps> = ({
 
     {loading && (
       <div className="loading-message">
-        <i className="fas fa-spinner fa-spin"></i> Searching...
+        <SpinnerIcon className="spin" /> Searching...
       </div>
     )}
 

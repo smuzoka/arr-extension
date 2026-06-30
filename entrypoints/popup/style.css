@@ -352,6 +352,16 @@ body::-webkit-scrollbar-thumb {
 }
 
 /* Icon-specific styles */
+.icon {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+}
+
+.spin {
+  animation: icon-spin 1s linear infinite;
+}
+
 .app-icon-png {
   transition: filter 0.2s;
 }
@@ -360,25 +370,44 @@ body::-webkit-scrollbar-thumb {
   filter: brightness(1.2) saturate(1.1);
 }
 
-.app-icon i {
-  font-size: 16px;
+.app-icon .icon {
+  width: 16px;
+  height: 16px;
 }
 
 /* Icon spacing improvements */
-.result-rating i,
-.result-language i,
-.result-network i {
+.result-rating .icon,
+.result-language .icon,
+.result-network .icon,
+.filters-toggle .icon,
+.message .icon,
+.loading-message .icon,
+.btn .icon {
   margin-right: 4px;
 }
 
-.add-button i,
-.added-indicator i {
-  font-size: 12px;
+.result-overview-toggle .icon {
+  width: 12px;
+  height: 12px;
 }
 
-.settings-button i,
-.close-button i {
-  font-size: 14px;
+.add-button .icon,
+.added-indicator .icon,
+.theme-toggle-btn .icon,
+.settings-btn .icon,
+.back-btn .icon {
+  width: 14px;
+  height: 14px;
+}
+
+@keyframes icon-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .search-results {

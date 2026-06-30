@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { createArrApi } from '../api/arrApi';
-import type { ArrApp, SearchResult, QualityProfile, RootFolder } from '../api/types';
+import type { ArrAppWithKey, SearchResult, QualityProfile, RootFolder } from '../api/types';
 import { storage, type SavedFormOptions } from '../utils/storage';
 import ResultCard from './ResultCard';
 
+const METADATA_TTL = 24 * 60 * 60 * 1000;
+
 interface AddItemFormProps {
-  app: ArrApp;
+  app: ArrAppWithKey;
   result: SearchResult;
   onSuccess: (result: SearchResult) => void;
   onCancel: () => void;
@@ -28,21 +30,15 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ app, result, onSuccess, onCan
   const [searchForMissing, setSearchForMissing] = useState(true);
   const [searchForCutoff, setSearchForCutoff] = useState(false);
 
-  const METADATA_TTL = 24 * 60 * 60 * 1000; // 24 hours
-
-  useEffect(() => {
-    loadFormData();
-  }, []);
-
-  const applySavedOptions = (
+  const applySavedOptions = useCallback((
     profiles: QualityProfile[],
     folders: RootFolder[],
-    savedOptions: SavedFormOptions | null
+    savedOptions: SavedFormOptions | null,
   ) => {
     if (savedOptions) {
       if (
         savedOptions.qualityProfileId &&
-        profiles.find(p => p.id === savedOptions.qualityProfileId)
+        profiles.find((p) => p.id === savedOptions.qualityProfileId)
       ) {
         setSelectedQualityProfile(savedOptions.qualityProfileId);
       } else if (profiles.length > 0) {
@@ -51,33 +47,30 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ app, result, onSuccess, onCan
 
       if (
         savedOptions.rootFolderPath &&
-        folders.find(f => f.path === savedOptions.rootFolderPath)
+        folders.find((f) => f.path === savedOptions.rootFolderPath)
       ) {
         setSelectedRootFolder(savedOptions.rootFolderPath);
       } else if (folders.length > 0) {
         setSelectedRootFolder(folders[0].path);
       }
 
-      if (savedOptions.monitored !== undefined)
-        setMonitored(savedOptions.monitored);
-      if (savedOptions.seasonFolder !== undefined)
-        setSeasonFolder(savedOptions.seasonFolder);
+      if (savedOptions.monitored !== undefined) setMonitored(savedOptions.monitored);
+      if (savedOptions.seasonFolder !== undefined) setSeasonFolder(savedOptions.seasonFolder);
       if (savedOptions.seriesType) setSeriesType(savedOptions.seriesType);
-      if (savedOptions.searchForMissing !== undefined)
-        setSearchForMissing(savedOptions.searchForMissing);
-      if (savedOptions.searchForCutoff !== undefined)
-        setSearchForCutoff(savedOptions.searchForCutoff);
-    } else {
-      if (profiles.length > 0) {
-        setSelectedQualityProfile(profiles[0].id);
-      }
-      if (folders.length > 0) {
-        setSelectedRootFolder(folders[0].path);
-      }
+      if (savedOptions.searchForMissing !== undefined) setSearchForMissing(savedOptions.searchForMissing);
+      if (savedOptions.searchForCutoff !== undefined) setSearchForCutoff(savedOptions.searchForCutoff);
+      return;
     }
-  };
 
-  const loadFormData = async () => {
+    if (profiles.length > 0) {
+      setSelectedQualityProfile(profiles[0].id);
+    }
+    if (folders.length > 0) {
+      setSelectedRootFolder(folders[0].path);
+    }
+  }, []);
+
+  const loadFormData = useCallback(async () => {
     setLoading(true);
     const savedOptions = await storage.getLastUsedOptions(app.type);
     const cached = await storage.getArrMetadata(app.id);
@@ -97,7 +90,7 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ app, result, onSuccess, onCan
         const api = createArrApi(app);
         const [profiles, folders] = await Promise.all([
           api.getQualityProfiles(),
-          api.getRootFolders()
+          api.getRootFolders(),
         ]);
 
         setQualityProfiles(profiles);
@@ -105,23 +98,20 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ app, result, onSuccess, onCan
         await storage.saveArrMetadata(app.id, {
           qualityProfiles: profiles,
           rootFolders: folders,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
 
         if (!usedCache) {
           applySavedOptions(profiles, folders, savedOptions);
-        } else {
-          setSelectedQualityProfile(prev =>
-            prev && profiles.find(p => p.id === prev)
-              ? prev
-              : profiles[0]?.id ?? null
-          );
-          setSelectedRootFolder(prev =>
-            prev && folders.find(f => f.path === prev)
-              ? prev
-              : folders[0]?.path ?? null
-          );
+          return;
         }
+
+        setSelectedQualityProfile((prev) =>
+          prev && profiles.find((p) => p.id === prev) ? prev : (profiles[0]?.id ?? null),
+        );
+        setSelectedRootFolder((prev) =>
+          prev && folders.find((f) => f.path === prev) ? prev : (folders[0]?.path ?? null),
+        );
       } catch (err) {
         if (!usedCache) {
           setError(err instanceof Error ? err.message : 'Failed to load form data');
@@ -134,11 +124,16 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ app, result, onSuccess, onCan
     };
 
     if (usedCache) {
-      fetchAndUpdate();
-    } else {
-      await fetchAndUpdate();
+      void fetchAndUpdate();
+      return;
     }
-  };
+
+    await fetchAndUpdate();
+  }, [app, applySavedOptions]);
+
+  useEffect(() => {
+    void loadFormData();
+  }, [loadFormData]);
 
   const saveCurrentOptions = async () => {
     const options: SavedFormOptions = {

@@ -1,6 +1,9 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import type { SearchResult } from '../api/types';
-import { useSelectedApp, useSearch, useExistingItems, useTheme } from '../hooks';
+import { useSelectedApp } from '../hooks/useSelectedApp';
+import { useSearch } from '../hooks/useSearch';
+import { useExistingItems } from '../hooks/useExistingItems';
+import { useTheme } from '../hooks/useTheme';
 import AddItemForm from './AddItemForm';
 import SearchPanel from './SearchPanel';
 import { type SearchFilterOptions } from './SearchFilters';

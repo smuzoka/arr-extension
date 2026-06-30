@@ -3,13 +3,6 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import AppForm from './AppForm';
 
-const fillRequiredFields = async () => {
-  const user = userEvent.setup();
-  await user.type(screen.getByLabelText('App Name'), 'My Sonarr');
-  await user.selectOptions(screen.getByLabelText('App Type'), 'sonarr');
-  return user;
-};
-
 describe('AppForm', () => {
   it('disables submit until url and api key are valid', async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined);

@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { useExistingItems } from "./useExistingItems";
-import type { ArrAppWithKey } from "../api/types";
+import type { ArrAppWithKey, MovieResult, SeriesResult } from "../api/types";
 
 const createDeferred = <T,>() => {
   let resolve: (value: T) => void;
@@ -71,8 +71,8 @@ describe("useExistingItems", () => {
       timestamp: Date.now(),
     });
 
-    let resolveRefresh: (value: any[]) => void;
-    const refreshPromise = new Promise<any[]>((resolve) => {
+    let resolveRefresh: (value: SeriesResult[]) => void;
+    const refreshPromise = new Promise<SeriesResult[]>((resolve) => {
       resolveRefresh = resolve;
     });
     getAllSeries.mockReturnValue(refreshPromise);
@@ -121,13 +121,13 @@ describe("useExistingItems", () => {
   it("ignores stale refresh results after app switch", async () => {
     getExistingIds.mockResolvedValue(null);
 
-    let resolveSeries: (value: any[]) => void;
-    const seriesPromise = new Promise<any[]>((resolve) => {
+    let resolveSeries: (value: SeriesResult[]) => void;
+    const seriesPromise = new Promise<SeriesResult[]>((resolve) => {
       resolveSeries = resolve;
     });
 
-    let resolveMovies: (value: any[]) => void;
-    const moviesPromise = new Promise<any[]>((resolve) => {
+    let resolveMovies: (value: MovieResult[]) => void;
+    const moviesPromise = new Promise<MovieResult[]>((resolve) => {
       resolveMovies = resolve;
     });
 
@@ -186,8 +186,8 @@ describe("useExistingItems", () => {
   });
 
   it("ignores stale refresh when new app cache read is slow", async () => {
-    const seriesDeferred = createDeferred<any[]>();
-    const moviesDeferred = createDeferred<any[]>();
+    const seriesDeferred = createDeferred<SeriesResult[]>();
+    const moviesDeferred = createDeferred<MovieResult[]>();
     const cacheDeferred = createDeferred<{
       ids: number[];
       timestamp: number;
@@ -269,7 +269,7 @@ describe("useExistingItems", () => {
       ids: number[];
       timestamp: number;
     }>();
-    const moviesDeferred = createDeferred<any[]>();
+    const moviesDeferred = createDeferred<MovieResult[]>();
 
     getExistingIds.mockImplementation((appId: string) => {
       if (appId === sonarrApp.id) {
@@ -317,7 +317,7 @@ describe("useExistingItems", () => {
 
   it("ignores refresh results when app becomes null", async () => {
     getExistingIds.mockResolvedValue(null);
-    const refreshDeferred = createDeferred<any[]>();
+    const refreshDeferred = createDeferred<SeriesResult[]>();
 
     getAllSeries.mockReturnValueOnce(refreshDeferred.promise);
 

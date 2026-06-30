@@ -1,7 +1,7 @@
 import React from 'react';
 import type { ArrAppWithKey } from '../api/types';
 import AppForm from './AppForm';
-import { getAppIcon } from '../utils/icons';
+import { AddIcon, getAppIcon } from '../utils/icons';
 
 interface AppSettingsPanelProps {
   apps: ArrAppWithKey[];
@@ -42,7 +42,7 @@ const AppSettingsPanel: React.FC<AppSettingsPanelProps> = ({
       <div className="settings-list">
         <div className="add-app-section">
           <button className="btn btn-primary" onClick={onAdd}>
-            <i className="fas fa-plus"></i> Add New App
+            <AddIcon /> Add New App
           </button>
         </div>
 

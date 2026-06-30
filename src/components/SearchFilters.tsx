@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import type { SearchFilters } from '../api/types';
+import { ChevronDownIcon, ChevronUpIcon, FilterIcon } from '../utils/icons';
 
 export type SearchFilterOptions = {
   years: number[];
@@ -91,12 +92,12 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
           type="button"
           onClick={() => setIsOpen(prev => !prev)}
         >
-          <i className="fas fa-filter"></i>
+          <FilterIcon />
           <span>Filters</span>
           {hasActiveFilters && (
             <span className="filter-badge">{activeFilterCount}</span>
           )}
-          <i className={`fas fa-chevron-${isOpen ? 'up' : 'down'}`}></i>
+          {isOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}
         </button>
 
         {showResultCount && (

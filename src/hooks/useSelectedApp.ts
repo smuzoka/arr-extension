@@ -59,7 +59,7 @@ export const useSelectedApp = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [refreshPermissionState]);
 
   const selectedApp = useMemo(
     () => apps.find((app) => app.id === selectedAppId) || null,
